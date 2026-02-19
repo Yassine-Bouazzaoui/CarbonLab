@@ -1,0 +1,1737 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CarboLab — Bilan Carbone & Indice d'Efficacité</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --blue-900: #0a1628;
+    --blue-800: #0d1f3c;
+    --blue-700: #112a52;
+    --blue-600: #1a3d6e;
+    --blue-500: #1e5799;
+    --blue-400: #2e7de0;
+    --blue-300: #5a9ff0;
+    --blue-100: #dbeafe;
+    --blue-50:  #eff6ff;
+    --accent:   #0ea5e9;
+    --accent-light: #38bdf8;
+    --green:    #10b981;
+    --orange:   #f59e0b;
+    --red:      #ef4444;
+    --text-primary: #0f172a;
+    --text-secondary: #475569;
+    --text-muted: #94a3b8;
+    --border: #e2e8f0;
+    --bg: #f8fafc;
+    --white: #ffffff;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
+    --shadow-md: 0 4px 16px rgba(0,0,0,0.08);
+    --shadow-lg: 0 12px 40px rgba(0,0,0,0.10), 0 4px 12px rgba(0,0,0,0.05);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text-primary);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── HEADER ── */
+  header {
+    background: var(--blue-900);
+    padding: 0 48px;
+    height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.25);
+  }
+
+  .logo { display: flex; align-items: center; gap: 12px; }
+  .logo-mark {
+    width: 38px; height: 38px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .logo-text {
+    font-size: 1.2rem; font-weight: 900;
+    letter-spacing: -0.5px;
+    color: #fff;
+    line-height: 1;
+  }
+  .logo-text .carbo { color: #e8e8e8; }
+  .logo-text .lab   { color: #4ade80; }
+
+  .header-right { display: flex; align-items: center; gap: 20px; }
+  .header-badge {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 0.75rem; color: #94a3b8;
+    font-family: 'DM Mono', monospace;
+  }
+  .live-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--green);
+    animation: livepulse 2s infinite;
+  }
+  @keyframes livepulse {
+    0%,100% { box-shadow: 0 0 0 0 rgba(16,185,129,0.4); }
+    50% { box-shadow: 0 0 0 4px rgba(16,185,129,0); }
+  }
+  .btn-header {
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.12);
+    color: #fff;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.8rem; font-weight: 500;
+    padding: 6px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .btn-header:hover { background: rgba(255,255,255,0.15); }
+
+  /* ── PROGRESS BAR ── */
+  .progress-bar-wrap {
+    background: var(--white);
+    border-bottom: 1px solid var(--border);
+    padding: 0 48px;
+    box-shadow: var(--shadow-sm);
+  }
+  .progress-steps {
+    display: flex;
+    align-items: stretch;
+    max-width: 860px;
+    margin: 0 auto;
+  }
+  .step-tab {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 16px 24px;
+    border-bottom: 3px solid transparent;
+    transition: all 0.25s;
+    cursor: default;
+    flex: 1;
+    user-select: none;
+  }
+  .step-tab.done { cursor: pointer; }
+  .step-tab.done:hover { background: var(--blue-50); }
+  .step-tab.active { border-bottom-color: var(--blue-400); background: var(--blue-50); }
+  .step-num {
+    width: 26px; height: 26px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.75rem; font-weight: 700; flex-shrink: 0;
+    transition: all 0.3s;
+    background: var(--border); color: var(--text-muted);
+  }
+  .step-tab.active .step-num { background: var(--blue-400); color: #fff; box-shadow: 0 0 0 4px rgba(46,125,224,0.15); }
+  .step-tab.done .step-num { background: var(--green); color: #fff; }
+  .step-tab.done .step-num::after { content: '✓'; font-size: 0.8rem; }
+  .step-tab.done .step-num span { display: none; }
+  .step-info { display: flex; flex-direction: column; }
+  .step-label { font-size: 0.78rem; font-weight: 600; color: var(--text-secondary); }
+  .step-tab.active .step-label { color: var(--blue-500); }
+  .step-tab.done .step-label { color: var(--green); }
+  .step-sublabel { font-size: 0.68rem; color: var(--text-muted); margin-top: 1px; }
+  .step-separator { width: 1px; background: var(--border); margin: 12px 0; }
+
+  /* ── MAIN ── */
+  .main-wrap {
+    flex: 1;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 48px 24px;
+  }
+
+  .form-card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    box-shadow: var(--shadow-lg);
+    width: 100%;
+    max-width: 720px;
+    overflow: hidden;
+  }
+
+  .card-header {
+    background: linear-gradient(135deg, var(--blue-900), var(--blue-700));
+    padding: 32px 40px;
+    position: relative;
+    overflow: hidden;
+  }
+  .card-header::after {
+    content: ''; position: absolute; right: -40px; top: -40px;
+    width: 200px; height: 200px; border-radius: 50%;
+    background: rgba(255,255,255,0.04);
+  }
+  .card-header::before {
+    content: ''; position: absolute; right: 60px; bottom: -60px;
+    width: 160px; height: 160px; border-radius: 50%;
+    background: rgba(14,165,233,0.08);
+  }
+  .step-indicator {
+    font-size: 0.72rem; font-weight: 600;
+    letter-spacing: 2px; text-transform: uppercase;
+    color: var(--accent-light); margin-bottom: 8px;
+    font-family: 'DM Mono', monospace;
+  }
+  .card-title { font-size: 1.6rem; font-weight: 700; color: #fff; letter-spacing: -0.5px; line-height: 1.25; position: relative; }
+  .card-subtitle { font-size: 0.88rem; color: rgba(255,255,255,0.55); margin-top: 8px; position: relative; }
+
+  .card-body { padding: 36px 40px; }
+
+  .form-group { margin-bottom: 24px; }
+  label.form-label {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 0.8rem; font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase; letter-spacing: 0.8px;
+    margin-bottom: 10px;
+  }
+
+  .form-input, .form-select {
+    width: 100%;
+    padding: 13px 16px;
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.95rem;
+    color: var(--text-primary);
+    background: var(--white);
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    appearance: none; -webkit-appearance: none;
+  }
+  .form-input:focus, .form-select:focus {
+    border-color: var(--blue-400);
+    box-shadow: 0 0 0 3px rgba(46,125,224,0.12);
+  }
+  .form-input.has-value, .form-select.has-value {
+    border-color: var(--blue-300);
+    background: var(--blue-50);
+  }
+  .input-with-unit { position: relative; }
+  .input-with-unit .form-input { padding-right: 56px; }
+  .input-unit {
+    position: absolute; right: 14px; top: 50%; transform: translateY(-50%);
+    font-family: 'DM Mono', monospace; font-size: 0.78rem;
+    color: var(--text-muted); pointer-events: none;
+  }
+
+  /* SEARCH box */
+  .search-wrapper { position: relative; margin-bottom: 10px; }
+  .search-wrapper input {
+    width: 100%; padding: 11px 16px 11px 40px;
+    border: 1.5px solid var(--border); border-radius: 10px;
+    font-family: 'DM Sans', sans-serif; font-size: 0.9rem;
+    color: var(--text-primary); background: var(--bg);
+    outline: none; transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .search-wrapper input:focus {
+    border-color: var(--blue-400);
+    box-shadow: 0 0 0 3px rgba(46,125,224,0.12);
+    background: var(--white);
+  }
+  .search-icon {
+    position: absolute; left: 13px; top: 50%; transform: translateY(-50%);
+    color: var(--text-muted); font-size: 0.9rem; pointer-events: none;
+  }
+
+  /* MATERIAL LIST */
+  .material-list {
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    max-height: 340px;
+    overflow-y: auto;
+  }
+  .material-list::-webkit-scrollbar { width: 6px; }
+  .material-list::-webkit-scrollbar-track { background: var(--bg); }
+  .material-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  .mat-group-header {
+    position: sticky; top: 0;
+    background: var(--blue-900);
+    color: var(--accent-light);
+    font-size: 0.68rem; font-weight: 700;
+    letter-spacing: 2px; text-transform: uppercase;
+    padding: 8px 16px;
+    z-index: 1;
+  }
+
+  .mat-item {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 16px;
+    cursor: pointer;
+    transition: background 0.15s;
+    border-bottom: 1px solid var(--border);
+    gap: 12px;
+  }
+  .mat-item:last-child { border-bottom: none; }
+  .mat-item:hover { background: var(--blue-50); }
+  .mat-item.selected { background: #eff6ff; }
+
+  .mat-item-left { display: flex; flex-direction: column; flex: 1; }
+  .mat-item-name { font-size: 0.88rem; font-weight: 600; color: var(--text-primary); }
+  .mat-item-sub { font-size: 0.72rem; color: var(--text-muted); margin-top: 2px; font-family: 'DM Mono', monospace; }
+
+  .mat-item-right { display: flex; flex-direction: column; align-items: flex-end; flex-shrink: 0; }
+  .mat-co2-badge {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.78rem; font-weight: 700;
+    padding: 3px 10px; border-radius: 20px;
+    white-space: nowrap;
+  }
+  .badge-very-low  { background: #d1fae5; color: #065f46; }
+  .badge-low       { background: #dcfce7; color: #166534; }
+  .badge-medium    { background: #fef9c3; color: #854d0e; }
+  .badge-high      { background: #fee2e2; color: #991b1b; }
+  .badge-very-high { background: #fce7f3; color: #9d174d; }
+  .badge-negative  { background: #f0fdf4; color: #14532d; border: 1px dashed #16a34a; }
+
+  .mat-check { color: var(--blue-400); font-size: 1rem; display: none; }
+  .mat-item.selected .mat-check { display: block; }
+
+  /* SELECTED DISPLAY */
+  .selected-mat-display {
+    display: none;
+    align-items: center; gap: 12px;
+    background: var(--blue-50);
+    border: 1.5px solid var(--blue-200, #bfdbfe);
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin-top: 10px;
+    animation: slideIn 0.2s ease;
+  }
+  .selected-mat-display.visible { display: flex; }
+  .smd-icon { font-size: 1.4rem; flex-shrink: 0; }
+  .smd-info { flex: 1; }
+  .smd-name { font-size: 0.9rem; font-weight: 700; color: var(--blue-700); }
+  .smd-detail { font-size: 0.72rem; color: var(--text-muted); font-family: 'DM Mono', monospace; margin-top: 2px; }
+  .smd-co2 { font-family: 'DM Mono', monospace; font-size: 1.1rem; font-weight: 700; color: var(--blue-500); flex-shrink: 0; }
+
+  @keyframes slideIn { from { opacity:0; transform:translateY(-6px); } to { opacity:1; transform:none; } }
+
+  /* SCALE */
+  .scale-live {
+    background: linear-gradient(135deg, var(--blue-50), #fff);
+    border: 1.5px solid var(--blue-100);
+    border-radius: 12px;
+    padding: 24px;
+    display: flex; align-items: center; gap: 20px;
+    margin-bottom: 20px;
+  }
+  .scale-icon-wrap {
+    width: 56px; height: 56px;
+    background: linear-gradient(135deg, var(--blue-400), var(--accent));
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.6rem; flex-shrink: 0;
+    box-shadow: 0 4px 12px rgba(46,125,224,0.25);
+  }
+  .scale-readout { flex: 1; }
+  .scale-readout-label { font-size: 0.72rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
+  .scale-readout-value { font-family: 'DM Mono', monospace; font-size: 2.2rem; font-weight: 700; color: var(--blue-500); line-height: 1.1; }
+  .scale-readout-value span { font-size: 1rem; font-weight: 400; color: var(--text-muted); margin-left: 4px; }
+  .scale-status { font-size: 0.72rem; color: var(--green); font-weight: 600; display: flex; align-items: center; gap: 4px; }
+
+  /* TRANSPORT */
+  .transport-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .transport-card {
+    border: 1.5px solid var(--border); border-radius: 12px;
+    padding: 16px; cursor: pointer;
+    transition: all 0.2s;
+    display: flex; align-items: center; gap: 12px;
+    background: var(--white);
+  }
+  .transport-card:hover { border-color: var(--blue-300); background: var(--blue-50); }
+  .transport-card.selected { border-color: var(--blue-400); background: var(--blue-50); box-shadow: 0 0 0 3px rgba(46,125,224,0.1); }
+  .transport-card input[type=radio] { display: none; }
+  .t-icon-wrap {
+    width: 38px; height: 38px; border-radius: 8px;
+    background: var(--bg);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.2rem; flex-shrink: 0; transition: background 0.2s;
+  }
+  .transport-card.selected .t-icon-wrap { background: var(--blue-100); }
+  .t-details { flex: 1; }
+  .t-name { font-size: 0.85rem; font-weight: 600; color: var(--text-primary); }
+  .t-co2 { font-size: 0.68rem; color: var(--text-muted); font-family: 'DM Mono', monospace; margin-top: 2px; }
+  .t-check {
+    width: 18px; height: 18px; border-radius: 50%;
+    border: 2px solid var(--border); transition: all 0.2s; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .transport-card.selected .t-check { background: var(--blue-400); border-color: var(--blue-400); }
+  .transport-card.selected .t-check::after { content: '✓'; color: #fff; font-size: 0.65rem; font-weight: 700; }
+
+  /* BUTTONS */
+  .card-footer {
+    padding: 22px 40px; border-top: 1px solid var(--border);
+    display: flex; justify-content: space-between; align-items: center;
+    background: var(--bg);
+  }
+  .btn {
+    padding: 12px 28px; border-radius: 10px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem; font-weight: 600;
+    cursor: pointer; transition: all 0.2s; border: none;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .btn-ghost {
+    background: transparent; color: var(--text-secondary);
+    border: 1.5px solid var(--border);
+  }
+  .btn-ghost:hover { background: var(--white); border-color: var(--blue-300); color: var(--blue-500); }
+  .btn-primary {
+    background: linear-gradient(135deg, var(--blue-500), var(--blue-400));
+    color: #fff; box-shadow: 0 4px 14px rgba(30,87,153,0.35);
+  }
+  .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(30,87,153,0.45); }
+  .btn-success {
+    background: linear-gradient(135deg, #059669, var(--green));
+    color: #fff; box-shadow: 0 4px 14px rgba(16,185,129,0.35);
+  }
+  .btn-success:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(16,185,129,0.45); }
+
+  /* STEP PAGES */
+  .step-page { display: none; }
+  .step-page.active { display: block; animation: fadeUp 0.3s ease; }
+  @keyframes fadeUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:none; } }
+
+  /* RESULTS */
+  .result-header {
+    padding: 36px 40px 24px; text-align: center;
+    border-bottom: 1px solid var(--border);
+  }
+  .result-score-label { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 2px; color: var(--text-muted); margin-bottom: 12px; }
+  .result-score { font-family: 'DM Mono', monospace; font-size: 4rem; font-weight: 700; line-height: 1; letter-spacing: -2px; }
+  .result-unit { font-size: 1rem; font-weight: 400; margin-left: 6px; opacity: 0.6; }
+  .result-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 18px; border-radius: 20px;
+    font-size: 0.8rem; font-weight: 700;
+    margin-top: 10px; letter-spacing: 0.5px;
+  }
+
+  .gauge-wrap { padding: 0 40px 24px; }
+  .gauge-label-row { display: flex; justify-content: space-between; font-size: 0.68rem; color: var(--text-muted); margin-bottom: 6px; }
+  .gauge-track { height: 10px; background: var(--border); border-radius: 999px; overflow: hidden; }
+  .gauge-fill { height: 100%; width: 0%; border-radius: 999px; transition: width 1.2s cubic-bezier(0.34, 1.56, 0.64, 1); }
+
+  .breakdown { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1px; background: var(--border); border-top: 1px solid var(--border); }
+  .breakdown-cell { background: var(--white); padding: 22px 16px; text-align: center; }
+  .bc-val { font-family: 'DM Mono', monospace; font-size: 1.2rem; font-weight: 700; color: var(--text-primary); }
+  .bc-key { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-muted); margin-top: 4px; font-weight: 600; }
+
+  .equiv-section { padding: 24px 40px; border-top: 1px solid var(--border); }
+  .equiv-title { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text-muted); margin-bottom: 14px; }
+  .equiv-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  .equiv-card {
+    background: var(--bg); border: 1px solid var(--border);
+    border-radius: 10px; padding: 14px 10px; text-align: center;
+  }
+  .eq-icon { font-size: 1.5rem; margin-bottom: 6px; }
+  .eq-val { font-family: 'DM Mono', monospace; font-size: 0.82rem; font-weight: 700; color: var(--text-primary); }
+  .eq-desc { font-size: 0.6rem; color: var(--text-muted); margin-top: 3px; line-height: 1.4; }
+
+  .detail-log {
+    margin: 0 40px 24px;
+    background: var(--blue-900); border-radius: 10px;
+    padding: 18px 22px;
+    font-family: 'DM Mono', monospace; font-size: 0.72rem;
+    color: #7dd3fc; line-height: 2;
+  }
+  .detail-log .log-key { color: #38bdf8; }
+  .detail-log .log-val { color: #e0f2fe; }
+  .detail-log .log-sep { color: #1e3a5f; }
+
+  .result-actions { padding: 22px 40px; border-top: 1px solid var(--border); display: flex; gap: 12px; }
+
+  /* COLOR HELPERS */
+  .c-low { color: var(--green); }
+  .c-medium { color: var(--orange); }
+  .c-high { color: var(--red); }
+  .c-carbon { color: #10b981; }
+  .bg-low { background: var(--green); }
+  .bg-medium { background: var(--orange); }
+  .bg-high { background: var(--red); }
+  .bg-carbon { background: #10b981; }
+  .badge-lvl-low { background: #d1fae5; color: #065f46; }
+  .badge-lvl-medium { background: #fef3c7; color: #92400e; }
+  .badge-lvl-high { background: #fee2e2; color: #991b1b; }
+  .badge-lvl-carbon { background: #d1fae5; color: #065f46; }
+
+  .no-results { padding: 24px; text-align: center; color: var(--text-muted); font-size: 0.85rem; }
+
+  /* NORMES TAG */
+  .norm-tag {
+    display: inline-block;
+    font-size: 0.6rem; font-family: 'DM Mono', monospace;
+    background: var(--blue-100); color: var(--blue-500);
+    padding: 1px 6px; border-radius: 4px; margin-left: 4px;
+    vertical-align: middle;
+  }
+
+  footer {
+    background: var(--white);
+    border-top: 1px solid var(--border);
+    padding: 14px 48px;
+    display: flex; align-items: center; justify-content: space-between;
+    font-size: 0.7rem; color: var(--text-muted);
+  }
+  .footer-right { display: flex; align-items: center; gap: 16px; }
+  .footer-link { color: var(--blue-400); text-decoration: none; font-weight: 500; }
+
+  /* ── FLEXION TEST ── */
+  .flexion-visual {
+    background: var(--blue-900);
+    border-radius: 12px;
+    padding: 28px 24px 20px;
+    margin-bottom: 24px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .flexion-visual::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse at 50% 120%, rgba(46,125,224,0.15), transparent 65%);
+  }
+  .flexion-svg { width: 100%; max-width: 400px; height: auto; position: relative; z-index:1; }
+  .flexion-sigma-display {
+    display: flex; align-items: center; justify-content: center;
+    gap: 6px; margin-top: 12px; position: relative; z-index:1;
+  }
+  .flexion-sigma-val {
+    font-family: 'DM Mono', monospace; font-size: 1.8rem; font-weight: 700;
+    color: #38bdf8; letter-spacing: -1px;
+    transition: color 0.3s;
+  }
+  .flexion-sigma-unit { font-family: 'DM Mono', monospace; font-size: 0.9rem; color: rgba(255,255,255,0.4); }
+  .flexion-norm { font-size: 0.65rem; color: rgba(255,255,255,0.3); font-family: 'DM Mono', monospace; margin-top: 4px; position: relative; z-index:1; }
+
+  .sigma-input-wrap {
+    position: relative;
+    margin-bottom: 20px;
+  }
+  .sigma-input-big {
+    width: 100%; padding: 20px 80px 20px 24px;
+    border: 2px solid var(--border); border-radius: 14px;
+    font-family: 'DM Mono', monospace; font-size: 2rem; font-weight: 700;
+    color: var(--blue-500); background: var(--white);
+    outline: none; transition: border-color 0.2s, box-shadow 0.2s;
+    text-align: left;
+  }
+  .sigma-input-big:focus {
+    border-color: var(--blue-400);
+    box-shadow: 0 0 0 4px rgba(46,125,224,0.10);
+  }
+  .sigma-input-big::placeholder { color: var(--border); font-size: 1.6rem; }
+  .sigma-unit-label {
+    position: absolute; right: 20px; top: 50%; transform: translateY(-50%);
+    font-family: 'DM Mono', monospace; font-size: 1rem; font-weight: 600;
+    color: var(--text-muted); pointer-events: none;
+  }
+  .sigma-presets {
+    display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px;
+  }
+  .sigma-preset {
+    background: var(--bg); border: 1.5px solid var(--border);
+    border-radius: 8px; padding: 6px 14px;
+    font-family: 'DM Mono', monospace; font-size: 0.75rem; font-weight: 600;
+    color: var(--text-secondary); cursor: pointer; transition: all 0.15s;
+  }
+  .sigma-preset:hover { border-color: var(--blue-300); color: var(--blue-500); background: var(--blue-50); }
+  .sigma-preset.selected { border-color: var(--blue-400); background: var(--blue-50); color: var(--blue-500); }
+  .sigma-ref-label { font-size: 0.7rem; color: var(--text-muted); margin-bottom: 8px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; }
+
+  /* ── SCORE 0–100 ── */
+  .score-ring-wrap {
+    display: flex; align-items: center; gap: 32px;
+    padding: 0 8px;
+  }
+  .score-ring-svg { flex-shrink: 0; }
+  .score-ring-info { flex: 1; }
+  .score-ring-grade { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; color: var(--text-muted); margin-bottom: 4px; }
+  .score-ring-val { font-family: 'DM Mono', monospace; font-size: 3.5rem; font-weight: 700; line-height: 1; letter-spacing: -2px; }
+  .score-ring-label { font-size: 0.85rem; font-weight: 600; margin-top: 6px; }
+  .score-ring-sub { font-size: 0.75rem; color: var(--text-muted); margin-top: 4px; font-family: 'DM Mono', monospace; }
+
+  .score-bar-section { padding: 20px 40px; border-bottom: 1px solid var(--border); }
+  .score-bar-title { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text-muted); margin-bottom: 14px; }
+  .score-breakdown { display: flex; flex-direction: column; gap: 10px; }
+  .score-criterion {
+    display: flex; align-items: center; gap: 12px;
+  }
+  .sc-label { font-size: 0.78rem; font-weight: 600; color: var(--text-secondary); width: 160px; flex-shrink: 0; }
+  .sc-track { flex: 1; height: 8px; background: var(--border); border-radius: 999px; overflow: hidden; }
+  .sc-fill { height: 100%; border-radius: 999px; transition: width 1s cubic-bezier(0.34, 1.56, 0.64, 1); }
+  .sc-val { font-family: 'DM Mono', monospace; font-size: 0.75rem; font-weight: 700; color: var(--text-primary); width: 44px; text-align: right; flex-shrink: 0; }
+
+  /* ── EFFICIENCY INDEX SCORE ── */
+  .efi-hero {
+    padding: 32px 40px 28px;
+    background: var(--blue-900);
+    border-bottom: 1px solid #1e3a5f;
+  }
+  .efi-super-label { font-size: 0.7rem; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: #38bdf8; margin-bottom: 20px; font-family: 'DM Mono', monospace; }
+  .efi-metrics { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1px; background: var(--border); border-top: 1px solid var(--border); }
+  .efi-metric-cell { background: var(--white); padding: 20px 16px; text-align: center; }
+  .efi-metric-val { font-family: 'DM Mono', monospace; font-size: 1.15rem; font-weight: 700; color: var(--text-primary); }
+  .efi-metric-key { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-muted); margin-top: 4px; font-weight: 600; }
+  .efi-metric-sub { font-size: 0.6rem; color: var(--text-muted); margin-top: 2px; font-family: 'DM Mono', monospace; }
+  .efi-interpretation { padding: 20px 40px; border-bottom: 1px solid var(--border); }
+  .efi-interpretation-title { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text-muted); margin-bottom: 10px; }
+  .efi-interp-text { font-size: 0.88rem; color: var(--text-secondary); line-height: 1.6; }
+  .efi-interp-text strong { color: var(--text-primary); }
+
+  @media (max-width: 640px) {
+    header, .progress-bar-wrap, footer { padding-left: 20px; padding-right: 20px; }
+    .main-wrap { padding: 20px 12px; }
+    .card-body, .card-footer, .result-actions, .detail-log, .equiv-section { padding-left: 20px; padding-right: 20px; }
+    .card-header { padding: 24px 20px; }
+    .result-header { padding: 24px 20px; }
+    .gauge-wrap { padding-left: 20px; padding-right: 20px; }
+    .transport-grid { grid-template-columns: 1fr; }
+    .equiv-grid { grid-template-columns: 1fr 1fr; }
+    .breakdown { grid-template-columns: 1fr; }
+    .step-sublabel { display: none; }
+    .flexion-grid, .flexion-grid-3 { grid-template-columns: 1fr 1fr; }
+    .efi-hero { flex-direction: column; padding: 24px 20px; }
+    .efi-metrics { grid-template-columns: 1fr; }
+    .efi-letter { font-size: 5rem; }
+    .efi-interpretation, .spider-wrap { padding-left: 20px; padding-right: 20px; }
+  }
+
+  /* ── DUAL MATERIAL TABS ── */
+  .mat-tabs {
+    display: flex;
+    border-bottom: 2px solid var(--border);
+    margin-bottom: 24px;
+    background: var(--bg);
+    margin: -36px -40px 28px;
+    padding: 0 40px;
+  }
+  .mat-tab {
+    flex: 1;
+    padding: 14px 16px;
+    border: none;
+    background: transparent;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border-bottom: 3px solid transparent;
+    margin-bottom: -2px;
+    transition: all 0.2s;
+  }
+  .mat-tab:hover { color: var(--text-secondary); }
+  .mat-tab.active-A { color: var(--blue-500); border-bottom-color: var(--blue-400); background: var(--blue-50); }
+  .mat-tab.active-B { color: #7c3aed; border-bottom-color: #7c3aed; background: #f5f3ff; }
+  .mat-badge {
+    width: 22px; height: 22px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.7rem; font-weight: 900; color: #fff;
+    flex-shrink: 0;
+  }
+  .badge-A { background: var(--blue-400); }
+  .badge-B { background: #7c3aed; }
+
+  .mat-panel { display: none; }
+  .mat-panel.visible { display: block; animation: fadeUp 0.2s ease; }
+
+  /* done indicator on tab */
+  .mat-tab .done-check { display: none; color: var(--green); font-size: 0.8rem; }
+  .mat-tab.done-A .done-check, .mat-tab.done-B .done-check { display: inline; }
+
+  /* Compare result cards */
+  .compare-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    padding: 24px 40px;
+  }
+  .compare-card {
+    border-radius: 12px;
+    overflow: hidden;
+    border: 2px solid var(--border);
+  }
+  .compare-card-header {
+    padding: 16px 20px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .compare-card-header.hA { background: var(--blue-900); }
+  .compare-card-header.hB { background: #1e1144; }
+  .cc-badge {
+    width: 30px; height: 30px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.85rem; font-weight: 900; color: #fff; flex-shrink: 0;
+  }
+  .cc-badge.A { background: var(--blue-400); }
+  .cc-badge.B { background: #7c3aed; }
+  .cc-mat-name { font-size: 0.78rem; font-weight: 700; color: rgba(255,255,255,0.9); flex: 1; line-height: 1.3; }
+  .cc-body { padding: 16px 20px; background: var(--white); }
+  .cc-score-row { display: flex; align-items: baseline; gap: 6px; margin-bottom: 10px; }
+  .cc-score-num { font-family: 'DM Mono', monospace; font-size: 2.4rem; font-weight: 700; line-height: 1; }
+  .cc-score-denom { font-family: 'DM Mono', monospace; font-size: 0.8rem; color: var(--text-muted); }
+  .cc-ring-row { margin-bottom: 10px; }
+  .cc-bar-track { height: 8px; border-radius: 999px; background: var(--border); overflow: hidden; margin-bottom: 4px; }
+  .cc-bar-fill { height: 100%; border-radius: 999px; transition: width 1.2s cubic-bezier(0.34,1.56,0.64,1); }
+  .cc-stat { display: flex; justify-content: space-between; font-size: 0.72rem; margin-bottom: 4px; }
+  .cc-stat-key { color: var(--text-muted); font-weight: 600; }
+  .cc-stat-val { font-family: 'DM Mono', monospace; color: var(--text-primary); font-weight: 700; }
+  .cc-level { font-size: 0.75rem; font-weight: 700; margin-top: 8px; padding: 4px 10px; border-radius: 20px; display: inline-block; }
+
+  /* winner banner */
+  .winner-banner {
+    margin: 0 40px 16px;
+    background: linear-gradient(135deg, var(--blue-900), #1e1144);
+    border-radius: 12px;
+    padding: 20px 24px;
+    display: flex; align-items: center; gap: 16px;
+  }
+  .winner-icon { font-size: 2rem; flex-shrink: 0; }
+  .winner-text { flex: 1; }
+  .winner-title { font-size: 0.7rem; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: rgba(255,255,255,0.5); margin-bottom: 4px; }
+  .winner-name { font-size: 1rem; font-weight: 700; color: #fff; }
+  .winner-sub { font-size: 0.75rem; color: rgba(255,255,255,0.5); margin-top: 2px; font-family: 'DM Mono', monospace; }
+  .winner-score { font-family: 'DM Mono', monospace; font-size: 2rem; font-weight: 700; color: #4ade80; flex-shrink: 0; }
+
+  .compare-detail { padding: 0 40px 24px; }
+  .compare-detail-title { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text-muted); margin-bottom: 12px; }
+  .compare-row {
+    display: flex; align-items: center;
+    border-bottom: 1px solid var(--border);
+    padding: 10px 0;
+    gap: 12px;
+  }
+  .compare-row:last-child { border-bottom: none; }
+  .cr-label { font-size: 0.78rem; font-weight: 600; color: var(--text-muted); flex: 1; }
+  .cr-val { font-family: 'DM Mono', monospace; font-size: 0.82rem; font-weight: 700; width: 90px; text-align: right; }
+  .cr-val.best { color: var(--green); }
+  .cr-val.worst { color: var(--red); }
+
+  @media (max-width: 640px) {
+    .compare-grid { grid-template-columns: 1fr; padding: 16px; }
+    .winner-banner { margin: 0 16px 12px; }
+    .compare-detail { padding: 0 16px 16px; }
+    .mat-tabs { margin: -28px -24px 20px; padding: 0 24px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-mark">
+      <svg width="38" height="38" viewBox="0 0 38 38" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <!-- Atom orbits -->
+        <ellipse cx="19" cy="19" rx="17" ry="7" stroke="url(#g1)" stroke-width="1.8" fill="none"/>
+        <ellipse cx="19" cy="19" rx="17" ry="7" stroke="url(#g2)" stroke-width="1.8" fill="none" transform="rotate(60 19 19)"/>
+        <ellipse cx="19" cy="19" rx="17" ry="7" stroke="url(#g3)" stroke-width="1.8" fill="none" transform="rotate(-60 19 19)"/>
+        <!-- Nucleus -->
+        <circle cx="19" cy="19" r="3.5" fill="url(#gn)"/>
+        <!-- Electrons -->
+        <circle cx="19" cy="12" r="1.8" fill="#4ade80"/>
+        <circle cx="27" cy="23.5" r="1.8" fill="#22c55e"/>
+        <circle cx="11" cy="23.5" r="1.8" fill="#16a34a"/>
+        <!-- Crystal tip (top - like in logo) -->
+        <polygon points="19,2 22,8 19,6 16,8" fill="url(#gc)" opacity="0.9"/>
+        <defs>
+          <linearGradient id="g1" x1="2" y1="19" x2="36" y2="19" gradientUnits="userSpaceOnUse">
+            <stop stop-color="#4ade80"/><stop offset="1" stop-color="#0ea5e9"/>
+          </linearGradient>
+          <linearGradient id="g2" x1="2" y1="19" x2="36" y2="19" gradientUnits="userSpaceOnUse">
+            <stop stop-color="#22c55e"/><stop offset="1" stop-color="#38bdf8"/>
+          </linearGradient>
+          <linearGradient id="g3" x1="2" y1="19" x2="36" y2="19" gradientUnits="userSpaceOnUse">
+            <stop stop-color="#16a34a"/><stop offset="1" stop-color="#0284c7"/>
+          </linearGradient>
+          <radialGradient id="gn" cx="50%" cy="40%" r="60%">
+            <stop stop-color="#4ade80"/><stop offset="1" stop-color="#15803d"/>
+          </radialGradient>
+          <linearGradient id="gc" x1="19" y1="2" x2="19" y2="8" gradientUnits="userSpaceOnUse">
+            <stop stop-color="#a7f3d0"/><stop offset="1" stop-color="#4ade80"/>
+          </linearGradient>
+        </defs>
+      </svg>
+    </div>
+    <div class="logo-text"><span class="carbo">CARBO</span><span class="lab">LAB</span></div>
+  </div>
+  <div class="header-right">
+    <div class="header-badge">
+      <div class="live-dot"></div>
+      BALANCE CONNECTÉE
+    </div>
+    <button class="btn-header" onclick="resetAll()">↺ Nouvelle mesure</button>
+  </div>
+</header>
+
+<div class="progress-bar-wrap">
+  <div class="progress-steps">
+    <div class="step-tab active" id="tab1" onclick="goToStep(1)">
+      <div class="step-num" id="num1"><span>1</span></div>
+      <div class="step-info"><div class="step-label">Masse</div><div class="step-sublabel">Lecture balance</div></div>
+    </div>
+    <div class="step-separator"></div>
+    <div class="step-tab" id="tab2" onclick="goToStep(2)">
+      <div class="step-num" id="num2"><span>2</span></div>
+      <div class="step-info"><div class="step-label">Flexion 3pts</div><div class="step-sublabel">Test mécanique</div></div>
+    </div>
+    <div class="step-separator"></div>
+    <div class="step-tab" id="tab3" onclick="goToStep(3)">
+      <div class="step-num" id="num3"><span>3</span></div>
+      <div class="step-info"><div class="step-label">Matériau</div><div class="step-sublabel">Type de matière</div></div>
+    </div>
+    <div class="step-separator"></div>
+    <div class="step-tab" id="tab4" onclick="goToStep(4)">
+      <div class="step-num" id="num4"><span>4</span></div>
+      <div class="step-info"><div class="step-label">Transport</div><div class="step-sublabel">Mode & distance</div></div>
+    </div>
+    <div class="step-separator"></div>
+    <div class="step-tab" id="tab5" onclick="goToStep(5)">
+      <div class="step-num" id="num5"><span>5</span></div>
+      <div class="step-info"><div class="step-label">Bilan & IEF</div><div class="step-sublabel">Résultats + Indice</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="main-wrap">
+  <div class="form-card">
+
+    <!-- ─── ÉTAPE 1 : MASSE ─── -->
+    <div class="step-page active" id="page1">
+      <div class="card-header">
+        <div class="step-indicator">ÉTAPE 1 / 5 — MASSE</div>
+        <div class="card-title">Lecture de la masse</div>
+        <div class="card-subtitle">Saisissez la masse pour chacun des deux matériaux détectés par la balance.</div>
+      </div>
+      <div class="card-body">
+        <!-- Dual material tabs -->
+        <div class="mat-tabs">
+          <button class="mat-tab active-A" id="massTabA" onclick="switchMassTab('A')">
+            <span class="mat-badge badge-A">A</span> Matériau A <span class="done-check">✓</span>
+          </button>
+          <button class="mat-tab" id="massTabB" onclick="switchMassTab('B')">
+            <span class="mat-badge badge-B">B</span> Matériau B <span class="done-check">✓</span>
+          </button>
+        </div>
+
+        <!-- Panel A -->
+        <div class="mat-panel visible" id="massPanelA">
+          <div class="scale-live">
+            <div class="scale-icon-wrap" style="background:linear-gradient(135deg,var(--blue-400),var(--accent));">⚖️</div>
+            <div class="scale-readout">
+              <div class="scale-readout-label">Masse — Matériau A</div>
+              <div class="scale-readout-value" id="scaleDisplayA">0.000 <span>kg</span></div>
+            </div>
+            <div class="scale-status"><div class="live-dot"></div> Stabilisé</div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">📏 Masse matériau A (kg)</label>
+            <div class="input-with-unit">
+              <input type="number" class="form-input" id="massA" min="0" step="0.001" placeholder="0.000" oninput="onMassInput('A')">
+              <span class="input-unit">kg</span>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">📝 Référence A (optionnel)</label>
+            <input type="text" class="form-input" id="refA" placeholder="ex : LOT-A-001">
+          </div>
+        </div>
+
+        <!-- Panel B -->
+        <div class="mat-panel" id="massPanelB">
+          <div class="scale-live" style="border-color:#e9d5ff;">
+            <div class="scale-icon-wrap" style="background:linear-gradient(135deg,#7c3aed,#a855f7);">⚖️</div>
+            <div class="scale-readout">
+              <div class="scale-readout-label">Masse — Matériau B</div>
+              <div class="scale-readout-value" id="scaleDisplayB" style="color:#7c3aed;">0.000 <span>kg</span></div>
+            </div>
+            <div class="scale-status" style="color:#7c3aed;"><div class="live-dot" style="background:#7c3aed;"></div> Stabilisé</div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">📏 Masse matériau B (kg)</label>
+            <div class="input-with-unit">
+              <input type="number" class="form-input" id="massB" min="0" step="0.001" placeholder="0.000" oninput="onMassInput('B')" style="border-color:#d8b4fe;">
+              <span class="input-unit">kg</span>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">📝 Référence B (optionnel)</label>
+            <input type="text" class="form-input" id="refB" placeholder="ex : LOT-B-001">
+          </div>
+        </div>
+      </div>
+      <div class="card-footer">
+        <span style="font-size:0.78rem;color:var(--text-muted);">Source : CarboLab™ v1.0</span>
+        <button class="btn btn-primary" onclick="nextStep(1)">Continuer →</button>
+      </div>
+    </div>
+
+    <!-- ─── ÉTAPE 2 : TEST DE FLEXION 3 POINTS ─── -->
+    <div class="step-page" id="page2">
+      <div class="card-header">
+        <div class="step-indicator">ÉTAPE 2 / 5 — FLEXION 3 POINTS</div>
+        <div class="card-title">Test de flexion 3 points</div>
+        <div class="card-subtitle">Saisissez la contrainte à la rupture σ pour chaque matériau.</div>
+      </div>
+      <div class="card-body">
+        <div class="mat-tabs">
+          <button class="mat-tab active-A" id="flexTabA" onclick="switchFlexTab('A')">
+            <span class="mat-badge badge-A">A</span> Matériau A <span class="done-check">✓</span>
+          </button>
+          <button class="mat-tab" id="flexTabB" onclick="switchFlexTab('B')">
+            <span class="mat-badge badge-B">B</span> Matériau B <span class="done-check">✓</span>
+          </button>
+        </div>
+
+        <!-- Schema SVG (shared) -->
+        <div class="flexion-visual" style="margin-bottom:16px;">
+          <svg class="flexion-svg" viewBox="0 0 400 140" xmlns="http://www.w3.org/2000/svg">
+            <polygon points="56,118 76,100 36,100" fill="#2e7de0" opacity="0.85"/>
+            <polygon points="344,118 364,100 324,100" fill="#2e7de0" opacity="0.85"/>
+            <line x1="10" y1="118" x2="110" y2="118" stroke="#2e7de0" stroke-width="1.5" opacity="0.3"/>
+            <line x1="290" y1="118" x2="390" y2="118" stroke="#2e7de0" stroke-width="1.5" opacity="0.3"/>
+            <rect x="36" y="88" width="328" height="13" rx="3" fill="#5a9ff0" opacity="0.9"/>
+            <line x1="200" y1="28" x2="200" y2="86" stroke="#38bdf8" stroke-width="2"/>
+            <polygon points="200,89 193,70 207,70" fill="#38bdf8"/>
+            <rect x="188" y="24" width="24" height="6" rx="2" fill="#38bdf8" opacity="0.7"/>
+            <text x="210" y="46" fill="#38bdf8" font-family="DM Mono,monospace" font-size="13" font-weight="700">F</text>
+            <line x1="56" y1="133" x2="344" y2="133" stroke="#64748b" stroke-width="1"/>
+            <line x1="56" y1="128" x2="56" y2="138" stroke="#64748b" stroke-width="1"/>
+            <line x1="344" y1="128" x2="344" y2="138" stroke="#64748b" stroke-width="1"/>
+            <text x="186" y="127" fill="#64748b" font-family="DM Mono,monospace" font-size="9">L — portée</text>
+            <text x="310" y="80" fill="#fbbf24" font-family="DM Mono,monospace" font-size="11" font-weight="700">σ</text>
+            <text x="322" y="80" fill="#fbbf24" font-family="DM Mono,monospace" font-size="8">max</text>
+          </svg>
+          <div class="flexion-sigma-display">
+            <span class="flexion-sigma-val" id="sigmaLive">—</span>
+            <span class="flexion-sigma-unit">MPa</span>
+          </div>
+          <div class="flexion-norm">NF EN ISO 178 · Essai de flexion 3 points</div>
+        </div>
+
+        <!-- Panel Flex A -->
+        <div class="mat-panel visible" id="flexPanelA">
+          <div class="form-group">
+            <label class="form-label">📊 Contrainte σ — Matériau A</label>
+            <div class="sigma-input-wrap">
+              <input type="number" class="sigma-input-big" id="sigmaA" min="0" step="0.1" placeholder="—" oninput="onSigmaInput('A')" style="color:var(--blue-500);">
+              <span class="sigma-unit-label">MPa</span>
+            </div>
+          </div>
+          <div class="sigma-ref-label">Valeurs typiques</div>
+          <div class="sigma-presets">
+            <button class="sigma-preset" onclick="setSigma('A',3.5)">Béton C25 · 3.5</button>
+            <button class="sigma-preset" onclick="setSigma('A',5.0)">Béton C40 · 5.0</button>
+            <button class="sigma-preset" onclick="setSigma('A',235)">Acier S235 · 235</button>
+            <button class="sigma-preset" onclick="setSigma('A',355)">Acier S355 · 355</button>
+            <button class="sigma-preset" onclick="setSigma('A',70)">Alum. · 70</button>
+            <button class="sigma-preset" onclick="setSigma('A',40)">Bois GL · 40</button>
+            <button class="sigma-preset" onclick="setSigma('A',80)">PP · 80</button>
+          </div>
+        </div>
+
+        <!-- Panel Flex B -->
+        <div class="mat-panel" id="flexPanelB">
+          <div class="form-group">
+            <label class="form-label">📊 Contrainte σ — Matériau B</label>
+            <div class="sigma-input-wrap">
+              <input type="number" class="sigma-input-big" id="sigmaB" min="0" step="0.1" placeholder="—" oninput="onSigmaInput('B')" style="color:#7c3aed; border-color:#d8b4fe;">
+              <span class="sigma-unit-label">MPa</span>
+            </div>
+          </div>
+          <div class="sigma-ref-label">Valeurs typiques</div>
+          <div class="sigma-presets">
+            <button class="sigma-preset" onclick="setSigma('B',3.5)" style="border-color:#d8b4fe;">Béton C25 · 3.5</button>
+            <button class="sigma-preset" onclick="setSigma('B',5.0)" style="border-color:#d8b4fe;">Béton C40 · 5.0</button>
+            <button class="sigma-preset" onclick="setSigma('B',235)" style="border-color:#d8b4fe;">Acier S235 · 235</button>
+            <button class="sigma-preset" onclick="setSigma('B',355)" style="border-color:#d8b4fe;">Acier S355 · 355</button>
+            <button class="sigma-preset" onclick="setSigma('B',70)" style="border-color:#d8b4fe;">Alum. · 70</button>
+            <button class="sigma-preset" onclick="setSigma('B',40)" style="border-color:#d8b4fe;">Bois GL · 40</button>
+            <button class="sigma-preset" onclick="setSigma('B',80)" style="border-color:#d8b4fe;">PP · 80</button>
+          </div>
+        </div>
+      </div>
+      <div class="card-footer">
+        <button class="btn btn-ghost" onclick="prevStep(2)">← Retour</button>
+        <button class="btn btn-primary" onclick="nextStep(2)">Continuer →</button>
+      </div>
+    </div>
+
+    <!-- ─── ÉTAPE 3 : MATÉRIAUX ─── -->
+    <div class="step-page" id="page3">
+      <div class="card-header">
+        <div class="step-indicator">ÉTAPE 3 / 5 — MATÉRIAUX</div>
+        <div class="card-title">Sélection des matériaux</div>
+        <div class="card-subtitle">Identifiez chaque matériau parmi plus de 80 références classifiées NF/EN.</div>
+      </div>
+      <div class="card-body">
+        <div class="mat-tabs">
+          <button class="mat-tab active-A" id="matTabA" onclick="switchMatTab('A')">
+            <span class="mat-badge badge-A">A</span> Matériau A <span class="done-check">✓</span>
+          </button>
+          <button class="mat-tab" id="matTabB" onclick="switchMatTab('B')">
+            <span class="mat-badge badge-B">B</span> Matériau B <span class="done-check">✓</span>
+          </button>
+        </div>
+
+        <!-- Recherche & catégorie partagées -->
+        <div class="form-group">
+          <label class="form-label">🔍 Recherche rapide</label>
+          <div class="search-wrapper">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="matSearch" placeholder="Ex: béton C25, acier S355, IPE..." oninput="renderMaterials()">
+          </div>
+        </div>
+        <div class="form-group" style="margin-bottom:12px;">
+          <label class="form-label">📦 Catégorie</label>
+          <select class="form-select" id="matCat" onchange="renderMaterials()">
+            <option value="">— Toutes les catégories —</option>
+            <option value="Béton">🏗️ Bétons (NF EN 206)</option>
+            <option value="Acier struct">🔩 Aciers de structure (NF EN 10025)</option>
+            <option value="Acier béton">🦺 Aciers pour béton armé</option>
+            <option value="Acier inox">✨ Aciers inoxydables</option>
+            <option value="Aluminium">🥈 Aluminium & alliages</option>
+            <option value="Cuivre">🟤 Cuivre & alliages</option>
+            <option value="Plastiques">🧪 Polymères & plastiques</option>
+            <option value="Isolation">🌡️ Isolants thermiques</option>
+            <option value="Construction min">🧱 Minéraux & maçonnerie</option>
+            <option value="Bois">🌲 Bois & produits dérivés</option>
+            <option value="Revêtements">🎨 Revêtements & membranes</option>
+            <option value="Autres">⚙️ Autres matières</option>
+          </select>
+        </div>
+
+        <!-- Panel Mat A -->
+        <div class="mat-panel visible" id="matPanelA">
+          <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--blue-400);margin-bottom:8px;">Sélection pour Matériau A</div>
+          <div class="material-list" id="materialListA"></div>
+          <div class="selected-mat-display" id="selMatDisplayA" style="display:none;border-color:#bfdbfe;">
+            <div class="smd-icon" id="selMatIconA">📦</div>
+            <div class="smd-info">
+              <div class="smd-name" id="selMatNameA">—</div>
+              <div class="smd-detail" id="selMatDetailA">—</div>
+            </div>
+            <div class="smd-co2" id="selMatCo2A">—</div>
+          </div>
+        </div>
+
+        <!-- Panel Mat B -->
+        <div class="mat-panel" id="matPanelB">
+          <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#7c3aed;margin-bottom:8px;">Sélection pour Matériau B</div>
+          <div class="material-list" id="materialListB"></div>
+          <div class="selected-mat-display" id="selMatDisplayB" style="display:none;border-color:#d8b4fe;">
+            <div class="smd-icon" id="selMatIconB">📦</div>
+            <div class="smd-info">
+              <div class="smd-name" id="selMatNameB">—</div>
+              <div class="smd-detail" id="selMatDetailB">—</div>
+            </div>
+            <div class="smd-co2" id="selMatCo2B">—</div>
+          </div>
+        </div>
+      </div>
+      <div class="card-footer">
+        <button class="btn btn-ghost" onclick="prevStep(3)">← Retour</button>
+        <button class="btn btn-primary" onclick="nextStep(3)">Continuer →</button>
+      </div>
+    </div>
+
+    <!-- ─── ÉTAPE 4 : TRANSPORT ─── -->
+    <div class="step-page" id="page4">
+      <div class="card-header">
+        <div class="step-indicator">ÉTAPE 4 / 5 — TRANSPORT</div>
+        <div class="card-title">Mode de transport</div>
+        <div class="card-subtitle">Renseignez le mode et la distance d'acheminement pour chaque matériau.</div>
+      </div>
+      <div class="card-body">
+        <div class="mat-tabs">
+          <button class="mat-tab active-A" id="transTabA" onclick="switchTransTab('A')">
+            <span class="mat-badge badge-A">A</span> Matériau A <span class="done-check">✓</span>
+          </button>
+          <button class="mat-tab" id="transTabB" onclick="switchTransTab('B')">
+            <span class="mat-badge badge-B">B</span> Matériau B <span class="done-check">✓</span>
+          </button>
+        </div>
+
+        <!-- Panel Trans A -->
+        <div class="mat-panel visible" id="transPanelA">
+          <div class="form-group">
+            <label class="form-label">🚚 Transport — Matériau A</label>
+            <div class="transport-grid">
+              <label class="transport-card" onclick="selectTransport('A','camion',this)"><input type="radio" name="transportA" value="camion"><div class="t-icon-wrap">🚛</div><div class="t-details"><div class="t-name">Camion (PL)</div><div class="t-co2">96 g CO₂/t·km</div></div><div class="t-check"></div></label>
+              <label class="transport-card" onclick="selectTransport('A','train',this)"><input type="radio" name="transportA" value="train"><div class="t-icon-wrap">🚂</div><div class="t-details"><div class="t-name">Train (fret)</div><div class="t-co2">11 g CO₂/t·km</div></div><div class="t-check"></div></label>
+              <label class="transport-card" onclick="selectTransport('A','bateau',this)"><input type="radio" name="transportA" value="bateau"><div class="t-icon-wrap">🚢</div><div class="t-details"><div class="t-name">Bateau</div><div class="t-co2">16 g CO₂/t·km</div></div><div class="t-check"></div></label>
+              <label class="transport-card" onclick="selectTransport('A','avion',this)"><input type="radio" name="transportA" value="avion"><div class="t-icon-wrap">✈️</div><div class="t-details"><div class="t-name">Fret aérien</div><div class="t-co2">1 130 g CO₂/t·km</div></div><div class="t-check"></div></label>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">📍 Distance transport A</label>
+            <div class="input-with-unit">
+              <input type="number" class="form-input" id="distanceA" min="0" step="1" placeholder="500">
+              <span class="input-unit">km</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Panel Trans B -->
+        <div class="mat-panel" id="transPanelB">
+          <div class="form-group">
+            <label class="form-label">🚚 Transport — Matériau B</label>
+            <div class="transport-grid">
+              <label class="transport-card" onclick="selectTransport('B','camion',this)"><input type="radio" name="transportB" value="camion"><div class="t-icon-wrap">🚛</div><div class="t-details"><div class="t-name">Camion (PL)</div><div class="t-co2">96 g CO₂/t·km</div></div><div class="t-check"></div></label>
+              <label class="transport-card" onclick="selectTransport('B','train',this)"><input type="radio" name="transportB" value="train"><div class="t-icon-wrap">🚂</div><div class="t-details"><div class="t-name">Train (fret)</div><div class="t-co2">11 g CO₂/t·km</div></div><div class="t-check"></div></label>
+              <label class="transport-card" onclick="selectTransport('B','bateau',this)"><input type="radio" name="transportB" value="bateau"><div class="t-icon-wrap">🚢</div><div class="t-details"><div class="t-name">Bateau</div><div class="t-co2">16 g CO₂/t·km</div></div><div class="t-check"></div></label>
+              <label class="transport-card" onclick="selectTransport('B','avion',this)"><input type="radio" name="transportB" value="avion"><div class="t-icon-wrap">✈️</div><div class="t-details"><div class="t-name">Fret aérien</div><div class="t-co2">1 130 g CO₂/t·km</div></div><div class="t-check"></div></label>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">📍 Distance transport B</label>
+            <div class="input-with-unit">
+              <input type="number" class="form-input" id="distanceB" min="0" step="1" placeholder="500" style="border-color:#d8b4fe;">
+              <span class="input-unit">km</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="card-footer">
+        <button class="btn btn-ghost" onclick="prevStep(4)">← Retour</button>
+        <button class="btn btn-success" onclick="calculate()">⚡ Calculer le bilan comparatif</button>
+      </div>
+    </div>
+
+    <!-- ─── ÉTAPE 5 : BILAN COMPARATIF ─── -->
+    <div class="step-page" id="page5">
+
+      <!-- WINNER BANNER -->
+      <div style="padding:20px 40px 0; background:var(--blue-900); border-bottom:1px solid #1e3a5f;">
+        <div style="font-size:0.7rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#38bdf8;margin-bottom:12px;font-family:'DM Mono',monospace;">ÉTAPE 5 / 5 — BILAN COMPARATIF</div>
+      </div>
+      <div class="winner-banner" id="winnerBanner" style="margin-top:20px;">
+        <div class="winner-icon" id="winnerIcon">🏆</div>
+        <div class="winner-text">
+          <div class="winner-title">Matériau recommandé</div>
+          <div class="winner-name" id="winnerName">—</div>
+          <div class="winner-sub" id="winnerSub">—</div>
+        </div>
+        <div class="winner-score" id="winnerScore">—</div>
+      </div>
+
+      <!-- COMPARE CARDS -->
+      <div class="compare-grid">
+        <!-- Card A -->
+        <div class="compare-card">
+          <div class="compare-card-header hA">
+            <div class="cc-badge A">A</div>
+            <div class="cc-mat-name" id="ccNameA">—</div>
+          </div>
+          <div class="cc-body">
+            <div class="cc-score-row">
+              <span class="cc-score-num" id="ccScoreA" style="color:var(--blue-400);">—</span>
+              <span class="cc-score-denom">/100</span>
+            </div>
+            <div class="cc-bar-track"><div class="cc-bar-fill" id="ccBarA" style="background:var(--blue-400);width:0%"></div></div>
+            <div class="cc-stat"><span class="cc-stat-key">σ rupture</span><span class="cc-stat-val" id="ccSigmaA">—</span></div>
+            <div class="cc-stat"><span class="cc-stat-key">CO₂ total</span><span class="cc-stat-val" id="ccCo2A">—</span></div>
+            <div class="cc-stat"><span class="cc-stat-key">Masse</span><span class="cc-stat-val" id="ccMassA">—</span></div>
+            <div class="cc-stat"><span class="cc-stat-key">Transport</span><span class="cc-stat-val" id="ccTransA">—</span></div>
+            <span class="cc-level" id="ccLevelA">—</span>
+          </div>
+        </div>
+
+        <!-- Card B -->
+        <div class="compare-card" style="border-color:#e9d5ff;">
+          <div class="compare-card-header hB">
+            <div class="cc-badge B">B</div>
+            <div class="cc-mat-name" id="ccNameB">—</div>
+          </div>
+          <div class="cc-body">
+            <div class="cc-score-row">
+              <span class="cc-score-num" id="ccScoreB" style="color:#7c3aed;">—</span>
+              <span class="cc-score-denom">/100</span>
+            </div>
+            <div class="cc-bar-track"><div class="cc-bar-fill" id="ccBarB" style="background:#7c3aed;width:0%"></div></div>
+            <div class="cc-stat"><span class="cc-stat-key">σ rupture</span><span class="cc-stat-val" id="ccSigmaB">—</span></div>
+            <div class="cc-stat"><span class="cc-stat-key">CO₂ total</span><span class="cc-stat-val" id="ccCo2B">—</span></div>
+            <div class="cc-stat"><span class="cc-stat-key">Masse</span><span class="cc-stat-val" id="ccMassB">—</span></div>
+            <div class="cc-stat"><span class="cc-stat-key">Transport</span><span class="cc-stat-val" id="ccTransB">—</span></div>
+            <span class="cc-level" id="ccLevelB">—</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- DETAIL COMPARISON TABLE -->
+      <div class="compare-detail">
+        <div class="compare-detail-title">// Comparaison détaillée</div>
+        <div class="compare-row"><span class="cr-label">IEF Score (0–100)</span><span class="cr-val" id="crIefA">—</span><span class="cr-val" id="crIefB">—</span></div>
+        <div class="compare-row"><span class="cr-label">σ rupture (MPa)</span><span class="cr-val" id="crSigmaA">—</span><span class="cr-val" id="crSigmaB">—</span></div>
+        <div class="compare-row"><span class="cr-label">CO₂ fabrication (kg)</span><span class="cr-val" id="crMatA">—</span><span class="cr-val" id="crMatB">—</span></div>
+        <div class="compare-row"><span class="cr-label">CO₂ transport (kg)</span><span class="cr-val" id="crTransA">—</span><span class="cr-val" id="crTransB">—</span></div>
+        <div class="compare-row"><span class="cr-label">CO₂ total (kg)</span><span class="cr-val" id="crTotalA">—</span><span class="cr-val" id="crTotalB">—</span></div>
+        <div class="compare-row"><span class="cr-label">Mécanique (/50)</span><span class="cr-val" id="crMechA">—</span><span class="cr-val" id="crMechB">—</span></div>
+        <div class="compare-row"><span class="cr-label">Efficience CO₂ (/40)</span><span class="cr-val" id="crCo2sA">—</span><span class="cr-val" id="crCo2sB">—</span></div>
+        <div class="compare-row"><span class="cr-label">Bonus transport (/10)</span><span class="cr-val" id="crTrsA">—</span><span class="cr-val" id="crTrsB">—</span></div>
+      </div>
+
+      <!-- LOGS -->
+      <div style="padding:0 40px; display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:24px;">
+        <div class="detail-log" id="detailLogA" style="font-size:0.65rem; line-height:1.8;"></div>
+        <div class="detail-log" id="detailLogB" style="font-size:0.65rem; line-height:1.8; border-left:2px solid #7c3aed;"></div>
+      </div>
+
+      <div class="result-actions">
+        <button class="btn btn-primary" onclick="resetAll()" style="flex:1;justify-content:center;">↺ Nouvelle comparaison</button>
+        <button class="btn btn-ghost" onclick="window.print()">🖨 Imprimer</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<footer>
+  <div>CarboLab · Base ADEME Empreinte® V23.6 · FDES / NF EN 15804 · Prototype de recherche ingénieur</div>
+  <div class="footer-right">
+    <a href="https://base-empreinte.ademe.fr" target="_blank" class="footer-link">Base ADEME</a>
+    <span>© 2025</span>
+  </div>
+</footer>
+
+<script>
+// ════════════════════════════════════════════════════════════
+//  BASE DE DONNÉES MATÉRIAUX — 80+ entrées
+//  co2 = kg CO₂eq / kg de matériau (sauf mention contraire)
+//  Sources : ADEME Base Empreinte V23.6, Infociments, FDES
+// ════════════════════════════════════════════════════════════
+const MATERIALS = [
+
+  // ─── BÉTONS (NF EN 206) ───────────────────────────────────
+  // Densité béton ≈ 2400 kg/m³ — valeurs converties en kg/kg
+  { cat:'Béton', icon:'🏗️', name:'Béton C12/15',          norm:'NF EN 206', co2:0.072, desc:'Béton de propreté — faible dosage ciment', ref:'~173 kg CO₂/m³' },
+  { cat:'Béton', icon:'🏗️', name:'Béton C16/20',          norm:'NF EN 206', co2:0.078, desc:'Béton courant — fondations légères',        ref:'~187 kg CO₂/m³' },
+  { cat:'Béton', icon:'🏗️', name:'Béton C20/25',          norm:'NF EN 206', co2:0.082, desc:'Structure courante — dalles, poteaux',      ref:'~197 kg CO₂/m³' },
+  { cat:'Béton', icon:'🏗️', name:'Béton C25/30',          norm:'NF EN 206', co2:0.085, desc:'Béton classique XC1 — référence NF EN 206', ref:'~204 kg CO₂/m³ (Infociments)' },
+  { cat:'Béton', icon:'🏗️', name:'Béton C30/37',          norm:'NF EN 206', co2:0.095, desc:'Structure soumise à l\'humidité XC2/XC3',   ref:'~228 kg CO₂/m³' },
+  { cat:'Béton', icon:'🏗️', name:'Béton C35/45',          norm:'NF EN 206', co2:0.105, desc:'Béton structurel XC3/XC4 — voiles, poteaux',ref:'~252 kg CO₂/m³' },
+  { cat:'Béton', icon:'🏗️', name:'Béton C40/50',          norm:'NF EN 206', co2:0.115, desc:'Haute résistance — tabliers de pont',       ref:'~276 kg CO₂/m³' },
+  { cat:'Béton', icon:'🏗️', name:'Béton C45/55',          norm:'NF EN 206', co2:0.125, desc:'Très haute résistance — structures spéc.',  ref:'~300 kg CO₂/m³' },
+  { cat:'Béton', icon:'🏗️', name:'Béton C50/60',          norm:'NF EN 206', co2:0.135, desc:'BHP — ouvrages d\'art, structures précontr.',ref:'~324 kg CO₂/m³' },
+  { cat:'Béton', icon:'🏗️', name:'Béton armé C25/30',     norm:'NF EN 206', co2:0.155, desc:'C25/30 + armature 80 kg/m³ (~3.3%)',        ref:'Béton + acier d\'armature' },
+  { cat:'Béton', icon:'🏗️', name:'Béton armé C30/37',     norm:'NF EN 206', co2:0.170, desc:'C30/37 + armature 100 kg/m³ — standard',    ref:'Béton + acier d\'armature' },
+  { cat:'Béton', icon:'🏗️', name:'Béton armé C35/45',     norm:'NF EN 206', co2:0.185, desc:'C35/45 + armature 120 kg/m³',               ref:'Béton + acier d\'armature' },
+  { cat:'Béton', icon:'🏗️', name:'Béton bas carbone (CEM III)', norm:'FDES', co2:0.055, desc:'Laitier de haut-fourneau — -40% CO₂ vs CEM I', ref:'Ciment avec 50%+ laitier' },
+  { cat:'Béton', icon:'🏗️', name:'Béton bas carbone (CEM II)', norm:'FDES', co2:0.068, desc:'Ciment composé — laitier ou cendres volantes', ref:'Réduction ~20-30% vs CEM I' },
+  { cat:'Béton', icon:'🏗️', name:'Béton précontraint',    norm:'NF EN 206', co2:0.200, desc:'Câbles de précontrainte + béton C40+',       ref:'Ouvrages d\'art, préfabrication' },
+  { cat:'Béton', icon:'🏗️', name:'Béton préfabriqué',     norm:'FDES',      co2:0.110, desc:'Dalles alvéolées, poutres préfab.',          ref:'Inclut transport usine-chantier' },
+
+  // ─── ACIERS DE STRUCTURE (NF EN 10025) ───────────────────
+  { cat:'Acier struct', icon:'🔩', name:'Acier S235 (laminé à chaud)',  norm:'NF EN 10025', co2:1.85, desc:'Usage général — HEA, HEB, IPE, UPN', ref:'Haut-fourneau — mix mondial' },
+  { cat:'Acier struct', icon:'🔩', name:'Acier S275 (laminé à chaud)',  norm:'NF EN 10025', co2:1.85, desc:'Charpente métallique courante',       ref:'Haut-fourneau' },
+  { cat:'Acier struct', icon:'🔩', name:'Acier S355 (laminé à chaud)',  norm:'NF EN 10025', co2:1.90, desc:'Haute résistance — ponts, bâtiments', ref:'Haut-fourneau — résistant' },
+  { cat:'Acier struct', icon:'🔩', name:'Acier S420 / S460',           norm:'NF EN 10025', co2:2.00, desc:'Très haute résistance — ouvrages d\'art',ref:'Haut-fourneau + traitement thermique' },
+  { cat:'Acier struct', icon:'🔩', name:'Acier recyclé (four à arc)',   norm:'NF EN 10025', co2:0.46, desc:'Filière électrique — 100% ferraille',  ref:'Four à arc électrique (EAF)' },
+  { cat:'Acier struct', icon:'🔩', name:'Profilé HEA (acier vierge)',   norm:'NF EN 10365', co2:1.90, desc:'Poutre large semelle série A',         ref:'HEA 100 à HEA 1000' },
+  { cat:'Acier struct', icon:'🔩', name:'Profilé HEB (acier vierge)',   norm:'NF EN 10365', co2:1.90, desc:'Poutre large semelle série B — robuste',ref:'HEB 100 à HEB 1000' },
+  { cat:'Acier struct', icon:'🔩', name:'Profilé IPE (acier vierge)',   norm:'NF EN 10365', co2:1.88, desc:'Poutre à semelles étroites — plancher', ref:'IPE 80 à IPE 600' },
+  { cat:'Acier struct', icon:'🔩', name:'Profilé IPN (acier vierge)',   norm:'NF EN 10365', co2:1.88, desc:'Poutre à âme inclinée — ancienne norme',ref:'IPN 80 à IPN 550' },
+  { cat:'Acier struct', icon:'🔩', name:'Profilé UPN / UPE',           norm:'NF EN 10365', co2:1.88, desc:'Profilé en U — lisses, rails, cadres',  ref:'UPN 80 à UPN 400' },
+  { cat:'Acier struct', icon:'🔩', name:'Profilé CHS (tube rond)',      norm:'NF EN 10210', co2:1.90, desc:'Tube creux circulaire — structures 3D', ref:'Ø 21 à Ø 711 mm' },
+  { cat:'Acier struct', icon:'🔩', name:'Profilé RHS / SHS (tube rect.)',norm:'NF EN 10210',co2:1.90, desc:'Tube creux rectangle ou carré',        ref:'Treillis, poteaux creux' },
+  { cat:'Acier struct', icon:'🔩', name:'Tôle laminée à chaud S355',   norm:'NF EN 10025', co2:1.90, desc:'Tôle épaisse — tabliers, réservoirs',  ref:'Épaisseur 3 à 150 mm' },
+  { cat:'Acier struct', icon:'🔩', name:'Tôle galvanisée (à chaud)',    norm:'NF EN 10346', co2:2.05, desc:'Protection anticorrosion + 0.2 kg CO₂ pour zinc',ref:'Toiture, bardage' },
+
+  // ─── ACIERS POUR BÉTON ARMÉ ───────────────────────────────
+  { cat:'Acier béton', icon:'🦺', name:'Rond à béton B500B (vierge)',   norm:'NF EN 10080', co2:1.85, desc:'Armature HA — haut-fourneau',          ref:'HA 6 à HA 40 mm' },
+  { cat:'Acier béton', icon:'🦺', name:'Rond à béton B500B (recyclé)', norm:'NF EN 10080', co2:0.46, desc:'Armature HA — four à arc électrique',   ref:'100% ferraille — filière EAF' },
+  { cat:'Acier béton', icon:'🦺', name:'Treillis soudé (TS)',          norm:'NF EN 10080', co2:0.70, desc:'TS — mix recyclé ~85%',                ref:'TS 500 NR, ST 25, ST 50' },
+  { cat:'Acier béton', icon:'🦺', name:'Armature façonnée assemblée',  norm:'NF EN 10080', co2:0.55, desc:'Cage d\'armature, façonnage inclus',    ref:'Livraison en cage prête à poser' },
+  { cat:'Acier béton', icon:'🦺', name:'Câble de précontrainte (toron)',norm:'NF EN 10138', co2:3.20, desc:'Acier haute résistance — traité thermiq.',ref:'T13, T15 — 1860 MPa' },
+
+  // ─── ACIERS INOXYDABLES ───────────────────────────────────
+  { cat:'Acier inox', icon:'✨', name:'Inox 304 (18-8)',               norm:'NF EN 10088', co2:6.15, desc:'Austénitique — 18% Cr, 8% Ni',          ref:'Usage courant alimentaire/industrie' },
+  { cat:'Acier inox', icon:'✨', name:'Inox 316L (18-10-2Mo)',         norm:'NF EN 10088', co2:6.80, desc:'Austénitique + molybdène — milieux corrosifs',ref:'Marine, chimie, médical' },
+  { cat:'Acier inox', icon:'✨', name:'Inox 430 (ferritique)',         norm:'NF EN 10088', co2:3.80, desc:'Ferritique — 17% Cr, sans nickel',      ref:'Électroménager, façades' },
+  { cat:'Acier inox', icon:'✨', name:'Inox duplex 2205',              norm:'NF EN 10088', co2:5.80, desc:'Austéno-ferritique — haute résistance',  ref:'Off-shore, chimie, pont' },
+  { cat:'Acier inox', icon:'✨', name:'Inox recyclé (moyen)',          norm:'NF EN 10088', co2:2.90, desc:'~60% recyclé — économie nickel+Cr',     ref:'Filière mixte fours EAF' },
+
+  // ─── ALUMINIUM ────────────────────────────────────────────
+  { cat:'Aluminium', icon:'🥈', name:'Aluminium primaire (EU)',        norm:'EN 573',      co2:11.50, desc:'Électrolyse bauxite — mix électrique EU',ref:'Alcan, Rio Tinto — haute intensité énergétique' },
+  { cat:'Aluminium', icon:'🥈', name:'Aluminium primaire (monde)',     norm:'EN 573',      co2:16.80, desc:'Électrolyse bauxite — mix mondial (charbon)',ref:'Production asiatique majoritaire' },
+  { cat:'Aluminium', icon:'🥈', name:'Aluminium recyclé (secondaire)', norm:'EN 573',      co2:0.60,  desc:'Refonte — 95% d\'énergie économisée',   ref:'Filière recyclage post-consommation' },
+  { cat:'Aluminium', icon:'🥈', name:'Alliage Al 6060 (profilé)',      norm:'EN 755',      co2:8.50,  desc:'Profilé extrudé — fenêtre, façade',     ref:'Mix primaire/recyclé ~50%' },
+  { cat:'Aluminium', icon:'🥈', name:'Alliage Al 6082 (structure)',    norm:'EN 755',      co2:9.00,  desc:'Structure aéronautique/navale',         ref:'Mix primaire' },
+  { cat:'Aluminium', icon:'🥈', name:'Tôle aluminium (laminée)',       norm:'EN 485',      co2:8.80,  desc:'Bardage, toiture, panneaux',            ref:'Épaisseur 0.5 à 10 mm' },
+
+  // ─── CUIVRE & ALLIAGES ────────────────────────────────────
+  { cat:'Cuivre', icon:'🟤', name:'Cuivre électrolytique (C11000)',   norm:'EN 1652',     co2:3.20,  desc:'Câblage, plomberie — raffinage électrolytique',ref:'99.9% Cu' },
+  { cat:'Cuivre', icon:'🟤', name:'Cuivre recyclé',                   norm:'EN 1652',     co2:1.40,  desc:'Refonte cuivre — économie ~55%',         ref:'Filière recyclage' },
+  { cat:'Cuivre', icon:'🟤', name:'Laiton CuZn37',                   norm:'EN 1652',     co2:2.80,  desc:'Alliage Cu-Zn — robinetterie, électrique',ref:'63% Cu, 37% Zn' },
+  { cat:'Cuivre', icon:'🟤', name:'Bronze CuSn8',                    norm:'EN 1652',     co2:3.50,  desc:'Alliage Cu-Sn — paliers, roulements',    ref:'92% Cu, 8% Sn' },
+  { cat:'Cuivre', icon:'🟤', name:'Tube cuivre plomberie',           norm:'EN 1057',     co2:2.50,  desc:'Tube Cu pour eau, gaz, chauffage',       ref:'Mix primaire/recyclé ~45%' },
+
+  // ─── PLASTIQUES / POLYMÈRES ───────────────────────────────
+  { cat:'Plastiques', icon:'🧪', name:'Polyéthylène HD (PEHD)',        norm:'ISO 17855',   co2:1.90,  desc:'Tuyaux, réservoirs, emballage',          ref:'Pétrochimie — processus vapeur craquage' },
+  { cat:'Plastiques', icon:'🧪', name:'Polyéthylène BD (PEBD)',        norm:'ISO 17855',   co2:2.00,  desc:'Films, emballages souples',              ref:'Polymérisaton haute pression' },
+  { cat:'Plastiques', icon:'🧪', name:'Polypropylène (PP)',            norm:'ISO 19069',   co2:1.72,  desc:'Pièces techniques, emballage rigide',    ref:'Pétrochimie — PP homopolymère' },
+  { cat:'Plastiques', icon:'🧪', name:'PVC rigide (uPVC)',             norm:'EN 15011',    co2:2.41,  desc:'Menuiserie, tuyaux, profilés',           ref:'Procédé chlore-soude + VCM' },
+  { cat:'Plastiques', icon:'🧪', name:'PVC souple (plastifié)',        norm:'EN 15011',    co2:3.20,  desc:'Câbles, revêtement sol, bâches',         ref:'PVC + plastifiants DINP/DIDP' },
+  { cat:'Plastiques', icon:'🧪', name:'PET (polyéthylène téréphtalate)',norm:'ISO 18064',  co2:3.40,  desc:'Bouteilles, films, fibres polyester',    ref:'Estérification PTA + MEG' },
+  { cat:'Plastiques', icon:'🧪', name:'Polystyrène expansé (EPS)',     norm:'EN 16783',    co2:3.29,  desc:'Isolation thermique, emballage choc',    ref:'Styrène expansé vapeur' },
+  { cat:'Plastiques', icon:'🧪', name:'Polystyrène extrudé (XPS)',     norm:'EN 16783',    co2:3.75,  desc:'Isolation sous dalle, toiture inversée', ref:'Extrusion + agent gonflant HFC' },
+  { cat:'Plastiques', icon:'🧪', name:'Polyuréthane (PU/PIR) — panneau',norm:'EN 15011',  co2:3.80,  desc:'Panneau sandwich, isolation industrielle',ref:'MDI + polyol + HFO gonflant' },
+  { cat:'Plastiques', icon:'🧪', name:'Polyamide 6 (nylon)',           norm:'ISO 16396',   co2:7.90,  desc:'Pièces mécaniques, câbles, textile',     ref:'Caprolactame — haute énergie' },
+  { cat:'Plastiques', icon:'🧪', name:'Polycarbonate (PC)',            norm:'ISO 14000',   co2:6.60,  desc:'Vitrages, casques, optique',             ref:'Phosgène + bisphénol A' },
+  { cat:'Plastiques', icon:'🧪', name:'PTFE (téflon)',                 norm:'ISO 13000',   co2:9.90,  desc:'Anti-adhérence, joints, tuyaux chimique',ref:'Fluoration — procédé très énergivore' },
+
+  // ─── ISOLANTS THERMIQUES ──────────────────────────────────
+  { cat:'Isolation', icon:'🌡️', name:'Laine de verre (panel)',         norm:'EN 15824',    co2:1.35,  desc:'Isolation comble/mur — fibre de verre',  ref:'Source ADEME FDES' },
+  { cat:'Isolation', icon:'🌡️', name:'Laine de roche (panel)',         norm:'EN 15824',    co2:1.28,  desc:'Isolation incombustible — basalte',       ref:'Source ADEME FDES' },
+  { cat:'Isolation', icon:'🌡️', name:'Ouate de cellulose',             norm:'EN 15101',    co2:0.42,  desc:'Isolation naturelle — papier recyclé',    ref:'~65% fibres recyclées' },
+  { cat:'Isolation', icon:'🌡️', name:'Liège expansé',                 norm:'EN 12104',    co2:-0.38, desc:'Puits de carbone — écorce de chêne-liège',ref:'Absorption CO₂ en croissance' },
+  { cat:'Isolation', icon:'🌡️', name:'Fibre de bois (panneau)',        norm:'EN 15101',    co2:-0.60, desc:'Isolation naturelle — biosourcé',          ref:'Stockage carbone biogénique' },
+  { cat:'Isolation', icon:'🌡️', name:'Laine de mouton',               norm:'EN 15101',    co2:3.50,  desc:'Isolation naturelle — transformation laine',ref:'Lavage + traitement' },
+
+  // ─── MINÉRAUX & MAÇONNERIE ────────────────────────────────
+  { cat:'Construction min', icon:'🧱', name:'Ciment CEM I (Portland)',     norm:'NF EN 197-1', co2:0.866, desc:'Liant hydraulique pur — 95%+ clinker',ref:'Source ATILH / ADEME — calcination calcaire' },
+  { cat:'Construction min', icon:'🧱', name:'Ciment CEM II (composé)',     norm:'NF EN 197-1', co2:0.640, desc:'Ciment composé — 20-35% ajouts minéraux',ref:'Laitier ou cendres volantes' },
+  { cat:'Construction min', icon:'🧱', name:'Ciment CEM III (laitier)',    norm:'NF EN 197-1', co2:0.280, desc:'Ciment de haut-fourneau — 66%+ laitier',ref:'Réduction 70% vs CEM I' },
+  { cat:'Construction min', icon:'🧱', name:'Brique terre cuite (pleine)', norm:'NF EN 771-1', co2:0.240, desc:'Brique traditionnelle pleine',           ref:'Cuisson four tunnel ~950°C' },
+  { cat:'Construction min', icon:'🧱', name:'Brique terre cuite (creuse)',  norm:'NF EN 771-1', co2:0.190, desc:'Brique à perforations verticales',       ref:'Structure légère' },
+  { cat:'Construction min', icon:'🧱', name:'Bloc béton creux (parpaing)', norm:'NF EN 771-3', co2:0.095, desc:'Parpaing 20x20x50 — maçonnerie courante',ref:'~230 kg CO₂/m³ parpaing' },
+  { cat:'Construction min', icon:'🧱', name:'Bloc béton cellulaire (AAC)', norm:'NF EN 771-4', co2:0.260, desc:'Béton cellulaire (Ytong, Siporex...)',    ref:'Silico-calcaire expansé autoclave' },
+  { cat:'Construction min', icon:'🧱', name:'Plâtre (CaSO4·½H₂O)',        norm:'NF EN 13950', co2:0.120, desc:'Calcination gypse à 150°C — plâtrerie',  ref:'Plaque, enduit' },
+  { cat:'Construction min', icon:'🧱', name:'Verre plat float',            norm:'NF EN 572',   co2:0.850, desc:'Fusion à 1500°C — silice + soude',       ref:'Vitrage simple, double, triple' },
+  { cat:'Construction min', icon:'🧱', name:'Verre double vitrage',        norm:'NF EN 1279',  co2:0.950, desc:'Double vitrage + gaz argon + espaceur',  ref:'Inclut intercalaire et gaz' },
+  { cat:'Construction min', icon:'🧱', name:'Granit',                     norm:'—',            co2:0.070, desc:'Roche naturelle — taille et polissage',   ref:'Faible transformation' },
+  { cat:'Construction min', icon:'🧱', name:'Calcaire taillé',            norm:'—',            co2:0.040, desc:'Pierre de construction — sciage',         ref:'Extraction et taille' },
+  { cat:'Construction min', icon:'🧱', name:'Asphalte (enrobé bitumineux)',norm:'NF EN 13108', co2:0.044, desc:'Chaussée routière — bitume + granulats',  ref:'~10-20 kg CO₂/t enrobé' },
+  { cat:'Construction min', icon:'🧱', name:'Zinc (toiture, bardage)',     norm:'NF EN 988',   co2:3.86,  desc:'Zinc laminé — toiture, gouttières',       ref:'Galvanisation et fonderie' },
+  { cat:'Construction min', icon:'🧱', name:'Plomb',                      norm:'—',            co2:1.58,  desc:'Feuille de plomb — étanchéité, tuyaux',  ref:'Production et raffinage' },
+
+  // ─── BOIS & PRODUITS DÉRIVÉS ──────────────────────────────
+  { cat:'Bois', icon:'🌲', name:'Bois résineux (pin, épicéa, sapin)', norm:'EN 14080',    co2:-1.60, desc:'Puits carbone — massif sec à 15%',        ref:'Séchage inclus — CO₂ stocké en croissance' },
+  { cat:'Bois', icon:'🌲', name:'Bois dur (chêne, hêtre)',            norm:'EN 14080',    co2:-1.30, desc:'Puits carbone — bois feuillu massif',     ref:'Durée de vie longue = stockage carbone' },
+  { cat:'Bois', icon:'🌲', name:'Bois lamellé-collé (GL24/GL32)',     norm:'EN 14080',    co2:-1.20, desc:'Structure — poutres et arches GLT',       ref:'Inclut colles polyuréthane' },
+  { cat:'Bois', icon:'🌲', name:'Bois lamellé-croisé (CLT)',          norm:'EN 16351',    co2:-1.10, desc:'Panneaux CLT — planchers, murs massifs',  ref:'5 à 7 plis croisés' },
+  { cat:'Bois', icon:'🌲', name:'Panneau OSB (bois aggloméré)',       norm:'EN 300',      co2: 0.32, desc:'OSB 3 — charpente, contreventement',      ref:'Copeaux + résine MDI ou phenol-formol' },
+  { cat:'Bois', icon:'🌲', name:'Contreplaqué bouleau',               norm:'EN 636',      co2: 0.28, desc:'Multiplis — coffrage, menuiserie',        ref:'Plis croisés + colle phénolique' },
+  { cat:'Bois', icon:'🌲', name:'Panneau MDF (fibre mi-densité)',      norm:'EN 622',      co2: 0.42, desc:'Ameublement, cloisons, portes',           ref:'Fibres + urée-formaldéhyde' },
+
+  // ─── REVÊTEMENTS & MEMBRANES ──────────────────────────────
+  { cat:'Revêtements', icon:'🎨', name:'Membrane EPDM (étanchéité)',    norm:'EN 13956',    co2:3.10,  desc:'Toiture-terrasse — caoutchouc synthétique',ref:'Épaisseur 1.2 à 3 mm' },
+  { cat:'Revêtements', icon:'🎨', name:'Membrane bitumineuse APP',      norm:'EN 13707',    co2:1.20,  desc:'Étanchéité bitume modifié polypropylène', ref:'Soudage au chalumeau' },
+  { cat:'Revêtements', icon:'🎨', name:'Membrane PVC (toiture)',        norm:'EN 13956',    co2:3.40,  desc:'Toiture PVC armée — membranes soudées',  ref:'Plastifiant + armature polyester' },
+  { cat:'Revêtements', icon:'🎨', name:'Carrelage céramique',           norm:'EN 14411',    co2:0.75,  desc:'Grès émaillé — cuisson 1200°C',          ref:'Calcination argiles + émail' },
+  { cat:'Revêtements', icon:'🎨', name:'Carrelage grès cérame (extérieur)',norm:'EN 14411', co2:0.90,  desc:'Grès porcelain — imperméable, gel/dégel', ref:'Cuisson ~1250°C' },
+
+  // ─── AUTRES MATIÈRES ──────────────────────────────────────
+  { cat:'Autres', icon:'⚙️', name:'Caoutchouc naturel (NR)',           norm:'—',            co2:3.20,  desc:'Hévéa — vulcanisation soufre',           ref:'Latex plantation tropicale' },
+  { cat:'Autres', icon:'⚙️', name:'Caoutchouc synthétique SBR',        norm:'—',            co2:3.50,  desc:'Styrène-butadiène — pneus, tapis',       ref:'Synthèse pétrochimique' },
+  { cat:'Autres', icon:'⚙️', name:'Papier / Carton',                   norm:'—',            co2:0.92,  desc:'Fabrication et blanchiment pâte kraft',  ref:'Chlore + Cl₂ ou ECF' },
+  { cat:'Autres', icon:'⚙️', name:'Textile coton',                     norm:'—',            co2:8.00,  desc:'Culture intensive et transformation',     ref:'Inclut eau et engrais azotés' },
+  { cat:'Autres', icon:'⚙️', name:'Fibres de verre (composite GRP)',   norm:'EN 14598',    co2:2.40,  desc:'Fibre de verre + résine polyester',       ref:'Pultrusion / infusion' },
+  { cat:'Autres', icon:'⚙️', name:'Fibres de carbone (CFRP)',          norm:'EN 14598',    co2:31.00, desc:'Carbone + résine époxy — haute résistance',ref:'Procédé PAN — très énergivore' },
+  { cat:'Autres', icon:'⚙️', name:'Résine époxy',                     norm:'—',            co2:6.00,  desc:'Adhésif, composite, revêtement',         ref:'Bisphénol A + épichlorhydrine' },
+  { cat:'Autres', icon:'⚙️', name:'Fonte grise',                      norm:'EN 1561',      co2:1.50,  desc:'Pièces moulées — fonte grise lamellaire', ref:'Haut-fourneau + cubilot' },
+  { cat:'Autres', icon:'⚙️', name:'Magnésium (primaire)',              norm:'—',            co2:25.00, desc:'Métal léger — électrolyse chlorure magnésien',ref:'Très haute intensité énergétique' },
+  { cat:'Autres', icon:'⚙️', name:'Titane (primaire)',                 norm:'—',            co2:35.00, desc:'Procédé Kroll — aérospatial, médical',    ref:'Réduction TiCl₄ par Mg' },
+];
+
+const TRANSPORT_DB = {
+  camion: { co2: 0.096, label: 'Camion (PL)' },
+  train:  { co2: 0.011, label: 'Train fret' },
+  bateau: { co2: 0.016, label: 'Transport maritime' },
+  avion:  { co2: 1.130, label: 'Fret aérien' },
+};
+
+// ── STATE ──
+let currentStep = 1;
+let selectedMatA = null;
+let selectedMatB = null;
+let selectedTransportA = null;
+let selectedTransportB = null;
+let activeMassTab = 'A';
+let activeFlexTab = 'A';
+let activeMatTab  = 'A';
+let activeTransTab= 'A';
+
+// ── TAB SWITCHES ──
+function switchTab(group, letter) {
+  const other = letter === 'A' ? 'B' : 'A';
+  // tabs
+  const tabEl   = document.getElementById(group+'Tab'+letter);
+  const tabElOth= document.getElementById(group+'Tab'+other);
+  if (!tabEl) return;
+  tabEl.className    = 'mat-tab active-'+letter;
+  tabElOth.className = 'mat-tab';
+  // panels
+  const panelEl    = document.getElementById(group+'Panel'+letter);
+  const panelElOth = document.getElementById(group+'Panel'+other);
+  if (panelEl)    { panelEl.classList.add('visible'); }
+  if (panelElOth) { panelElOth.classList.remove('visible'); }
+  // update live sigma display if flex tab
+  if (group === 'flex') {
+    const v = parseFloat(document.getElementById('sigma'+letter).value) || 0;
+    const live = document.getElementById('sigmaLive');
+    live.textContent = v > 0 ? v.toFixed(1) : '—';
+    live.style.color = v > 0 ? '#38bdf8' : 'rgba(255,255,255,0.3)';
+  }
+}
+function switchMassTab(l)  { activeMassTab=l;  switchTab('mass', l);  }
+function switchFlexTab(l)  { activeFlexTab=l;  switchTab('flex', l);  }
+function switchMatTab(l)   { activeMatTab=l;   switchTab('mat', l); renderMaterials(); }
+function switchTransTab(l) { activeTransTab=l; switchTab('trans', l); }
+
+// ── MASS ──
+function onMassInput(letter) {
+  const v = parseFloat(document.getElementById('mass'+letter).value) || 0;
+  const disp = document.getElementById('scaleDisplay'+letter);
+  if (disp) disp.innerHTML = v.toFixed(3) + ' <span>kg</span>';
+  // mark tab done
+  if (v > 0) document.getElementById('massTab'+letter).classList.add('done-'+letter);
+  else document.getElementById('massTab'+letter).classList.remove('done-'+letter);
+}
+
+// ── SIGMA ──
+function onSigmaInput(letter) {
+  const v = parseFloat(document.getElementById('sigma'+letter).value) || 0;
+  const live = document.getElementById('sigmaLive');
+  if (activeFlexTab === letter) {
+    live.textContent = v > 0 ? v.toFixed(1) : '—';
+    live.style.color = v > 0 ? '#38bdf8' : 'rgba(255,255,255,0.3)';
+  }
+  if (v > 0) document.getElementById('flexTab'+letter).classList.add('done-'+letter);
+  else document.getElementById('flexTab'+letter).classList.remove('done-'+letter);
+}
+
+function setSigma(letter, val) {
+  document.getElementById('sigma'+letter).value = val;
+  const panel = document.getElementById('flexPanel'+letter);
+  panel.querySelectorAll('.sigma-preset').forEach(b => b.classList.remove('selected'));
+  event.target.classList.add('selected');
+  onSigmaInput(letter);
+}
+
+// ── TRANSPORT ──
+function selectTransport(letter, val, el) {
+  if (letter === 'A') selectedTransportA = val;
+  else selectedTransportB = val;
+  const panel = document.getElementById('transPanel'+letter);
+  panel.querySelectorAll('.transport-card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  document.getElementById('transTab'+letter).classList.add('done-'+letter);
+}
+
+// ── MATERIALS ──
+function renderMaterials() {
+  const search = (document.getElementById('matSearch').value || '').toLowerCase().trim();
+  const cat    = document.getElementById('matCat').value;
+  const letter = activeMatTab;
+
+  const filtered = MATERIALS.filter(m => {
+    const matchCat = !cat || m.cat === cat;
+    const matchSrch = !search || m.name.toLowerCase().includes(search) || m.desc.toLowerCase().includes(search) || m.norm.toLowerCase().includes(search);
+    return matchCat && matchSrch;
+  });
+
+  const listId = 'materialList' + letter;
+  const list = document.getElementById(listId);
+  const selectedMat = letter === 'A' ? selectedMatA : selectedMatB;
+
+  if (filtered.length === 0) { list.innerHTML = '<div class="no-results">🔍 Aucun résultat</div>'; return; }
+
+  const groups = {};
+  filtered.forEach(m => { if (!groups[m.cat]) groups[m.cat]=[]; groups[m.cat].push(m); });
+
+  let html = '';
+  Object.entries(groups).forEach(([catName, items]) => {
+    html += `<div class="mat-group-header">${items[0].icon} ${catName}</div>`;
+    items.forEach(m => {
+      const isSel = selectedMat && selectedMat.name === m.name;
+      const co2Label = m.co2 < 0 ? `−${Math.abs(m.co2).toFixed(2)} kg CO₂/kg` : `${m.co2.toFixed(2)} kg CO₂/kg`;
+      html += `<div class="mat-item ${isSel?'selected':''}" onclick="selectMaterial('${letter}','${m.name.replace(/'/g,"\\'")}')" >
+        <div class="mat-item-left"><div class="mat-item-name">${m.name} <span class="norm-tag">${m.norm}</span></div><div class="mat-item-sub">${m.desc}</div></div>
+        <div class="mat-item-right"><div class="mat-co2-badge ${co2Badge(m.co2)}">${co2Label}</div></div>
+        <span class="mat-check">✓</span></div>`;
+    });
+  });
+  list.innerHTML = html;
+}
+
+function co2Badge(co2) {
+  if (co2<0) return 'badge-negative';
+  if (co2<0.5) return 'badge-very-low';
+  if (co2<2)   return 'badge-low';
+  if (co2<6)   return 'badge-medium';
+  if (co2<15)  return 'badge-high';
+  return 'badge-very-high';
+}
+
+function selectMaterial(letter, name) {
+  const mat = MATERIALS.find(m => m.name === name);
+  if (letter === 'A') selectedMatA = mat;
+  else selectedMatB = mat;
+
+  renderMaterials();
+
+  const disp = document.getElementById('selMatDisplay'+letter);
+  if (mat) {
+    disp.style.display = 'flex';
+    document.getElementById('selMatIcon'+letter).textContent = mat.icon;
+    document.getElementById('selMatName'+letter).textContent = mat.name;
+    document.getElementById('selMatDetail'+letter).textContent = `${mat.norm} — ${mat.desc}`;
+    const abs = Math.abs(mat.co2);
+    document.getElementById('selMatCo2'+letter).textContent = (mat.co2<0?'−':'')+abs.toFixed(2)+' kg CO₂/kg';
+    document.getElementById('matTab'+letter).classList.add('done-'+letter);
+  } else {
+    disp.style.display = 'none';
+    document.getElementById('matTab'+letter).classList.remove('done-'+letter);
+  }
+}
+
+// ── IEF SCORE HELPERS ──
+function calcScoreMech(sigma) {
+  if (!sigma || sigma<=0) return 0;
+  return Math.min(50, (Math.log10(sigma+1)/Math.log10(501))*50);
+}
+function calcScoreCo2(co2perkg) {
+  if (co2perkg<=0) return 40;
+  return Math.max(0, Math.min(40, (1/(1+co2perkg*0.5))*40+(co2perkg<0.5?10:0)));
+}
+function calcScoreTrans(transport, dist) {
+  if (!transport||!dist||dist===0) return 5;
+  const b = {train:10,bateau:8,camion:4,avion:0}[transport]||5;
+  return (transport==='avion'&&dist>1000)?0:b;
+}
+const SCORE_LEVELS=[
+  {min:85,label:'Exceptionnel',   color:'#059669'},{min:70,label:'Très performant', color:'#10b981'},
+  {min:55,label:'Performant',     color:'#34d399'},{min:40,label:'Satisfaisant',    color:'#fbbf24'},
+  {min:25,label:'Faible',         color:'#f97316'},{min:10,label:'Très faible',     color:'#ef4444'},
+  {min:0, label:'Non recommandé', color:'#991b1b'},
+];
+function getScoreLevel(s) { return SCORE_LEVELS.find(l=>s>=l.min)||SCORE_LEVELS[SCORE_LEVELS.length-1]; }
+
+function computeIEF(sigma, matCo2perKg, transport, dist) {
+  const sm = calcScoreMech(sigma);
+  const sc = calcScoreCo2(matCo2perKg);
+  const st = calcScoreTrans(transport, dist);
+  return { score: Math.round(Math.min(100, sm+sc+st)), sm, sc, st };
+}
+
+// ── NAVIGATION ──
+function goToStep(n) { if (n<currentStep) setStep(n); }
+
+function nextStep(from) {
+  if (from===1) {
+    const mA = parseFloat(document.getElementById('massA').value);
+    const mB = parseFloat(document.getElementById('massB').value);
+    if (!mA||mA<=0||!mB||mB<=0) { alert('Veuillez saisir une masse valide pour les deux matériaux.'); return; }
+    markDone(1); setStep(2);
+  } else if (from===2) {
+    const sA = parseFloat(document.getElementById('sigmaA').value);
+    const sB = parseFloat(document.getElementById('sigmaB').value);
+    if ((!sA||sA<=0)||(!sB||sB<=0)) {
+      if (!confirm('Contrainte σ manquante pour un ou les deux matériaux.\nL\'IEF sera incomplet. Continuer ?')) return;
+    }
+    markDone(2); setStep(3); renderMaterials();
+  } else if (from===3) {
+    if (!selectedMatA||!selectedMatB) { alert('Veuillez sélectionner un matériau pour A et B.'); return; }
+    markDone(3); setStep(4);
+  }
+}
+function prevStep(from) { setStep(from-1); }
+
+function setStep(n) {
+  currentStep = n;
+  document.querySelectorAll('.step-page').forEach((p,i)=>p.classList.toggle('active',i+1===n));
+  document.querySelectorAll('.step-tab').forEach((t,i)=>{
+    t.classList.remove('active');
+    if (i+1===n) t.classList.add('active');
+    if (i+1<n)  t.classList.add('done');
+    if (i+1>n)  t.classList.remove('done');
+  });
+}
+function markDone(n) {
+  const t = document.getElementById('tab'+n);
+  t.classList.add('done'); t.classList.remove('active');
+}
+
+// ── CALCULATE ──
+function calculate() {
+  const massA  = parseFloat(document.getElementById('massA').value)||0;
+  const massB  = parseFloat(document.getElementById('massB').value)||0;
+  const sigmaA = parseFloat(document.getElementById('sigmaA').value)||null;
+  const sigmaB = parseFloat(document.getElementById('sigmaB').value)||null;
+  const distA  = parseFloat(document.getElementById('distanceA').value)||0;
+  const distB  = parseFloat(document.getElementById('distanceB').value)||0;
+
+  if (!selectedMatA||!selectedMatB||!massA||!massB) { alert('Données incomplètes.'); return; }
+
+  markDone(4); setStep(5);
+
+  function calcMat(mat, mass, sigma, transport, dist) {
+    const co2Mat   = mat.co2 * mass;
+    const co2Trans = transport ? (TRANSPORT_DB[transport].co2*(mass/1000)*dist) : 0;
+    const co2Total = co2Mat + co2Trans;
+    const co2PerKg = Math.abs(mat.co2);
+    const ief      = sigma ? computeIEF(sigma, co2PerKg, transport, dist) : null;
+    return { co2Mat, co2Trans, co2Total, co2PerKg, ief };
+  }
+
+  const rA = calcMat(selectedMatA, massA, sigmaA, selectedTransportA, distA);
+  const rB = calcMat(selectedMatB, massB, sigmaB, selectedTransportB, distB);
+
+  const scoreA = rA.ief ? rA.ief.score : 0;
+  const scoreB = rB.ief ? rB.ief.score : 0;
+  const levelA = getScoreLevel(scoreA);
+  const levelB = getScoreLevel(scoreB);
+
+  // ── WINNER ──
+  const winnerLetter = scoreA >= scoreB ? 'A' : 'B';
+  const winnerMat    = winnerLetter==='A' ? selectedMatA : selectedMatB;
+  const winnerScore  = winnerLetter==='A' ? scoreA : scoreB;
+  const winnerLevel  = winnerLetter==='A' ? levelA : levelB;
+  document.getElementById('winnerIcon').textContent  = winnerLetter==='A' ? '🔵' : '🟣';
+  document.getElementById('winnerName').textContent  = `Matériau ${winnerLetter} — ${winnerMat.name}`;
+  document.getElementById('winnerSub').textContent   = `Score IEF : ${winnerScore}/100 — ${winnerLevel.label}`;
+  document.getElementById('winnerScore').textContent = winnerScore+'/100';
+  document.getElementById('winnerScore').style.color = winnerLevel.color;
+
+  // ── CARDS ──
+  function fillCard(letter, mat, mass, sigma, transport, dist, result, level, score) {
+    const tLabel = transport ? TRANSPORT_DB[transport].label : 'Non renseigné';
+    document.getElementById('ccName'+letter).textContent  = mat.name;
+    document.getElementById('ccScore'+letter).textContent = score;
+    document.getElementById('ccSigma'+letter).textContent = sigma ? sigma.toFixed(1)+' MPa' : 'N/A';
+    document.getElementById('ccCo2'+letter).textContent   = Math.abs(result.co2Total).toFixed(2)+' kg CO₂eq';
+    document.getElementById('ccMass'+letter).textContent  = mass.toFixed(3)+' kg';
+    document.getElementById('ccTrans'+letter).textContent = tLabel;
+    const lv = document.getElementById('ccLevel'+letter);
+    lv.textContent = level.label;
+    lv.style.background = level.color+'20';
+    lv.style.color = level.color;
+    setTimeout(()=>{ document.getElementById('ccBar'+letter).style.width=score+'%'; }, 300);
+  }
+
+  fillCard('A', selectedMatA, massA, sigmaA, selectedTransportA, distA, rA, levelA, scoreA);
+  fillCard('B', selectedMatB, massB, sigmaB, selectedTransportB, distB, rB, levelB, scoreB);
+
+  // ── COMPARISON TABLE ──
+  function best(vA, vB, higherIsBetter=true) {
+    if (vA===null||vB===null) return ['',''];
+    const aWins = higherIsBetter ? vA>=vB : vA<=vB;
+    return [aWins?'best':'worst', aWins?'worst':'best'];
+  }
+
+  const [iefA_cl, iefB_cl] = best(scoreA, scoreB, true);
+  const [sA_cl, sB_cl]     = best(sigmaA, sigmaB, true);
+  const [mA_cl, mB_cl]     = best(Math.abs(rA.co2Mat), Math.abs(rB.co2Mat), false);
+  const [tA_cl, tB_cl]     = best(rA.co2Trans, rB.co2Trans, false);
+  const [totA_cl, totB_cl] = best(Math.abs(rA.co2Total), Math.abs(rB.co2Total), false);
+  const [mechA_cl, mechB_cl] = rA.ief&&rB.ief ? best(rA.ief.sm, rB.ief.sm, true) : ['',''];
+  const [co2sA_cl, co2sB_cl] = rA.ief&&rB.ief ? best(rA.ief.sc, rB.ief.sc, true) : ['',''];
+  const [trsA_cl, trsB_cl]   = rA.ief&&rB.ief ? best(rA.ief.st, rB.ief.st, true) : ['',''];
+
+  function setCR(id, letter, val, cls) {
+    const el = document.getElementById('cr'+id+letter);
+    el.textContent = val; el.className = 'cr-val'+(cls?' '+cls:'');
+  }
+
+  setCR('Ief','A', scoreA+'/100', iefA_cl); setCR('Ief','B', scoreB+'/100', iefB_cl);
+  setCR('Sigma','A', sigmaA?sigmaA.toFixed(1)+' MPa':'N/A', sA_cl);
+  setCR('Sigma','B', sigmaB?sigmaB.toFixed(1)+' MPa':'N/A', sB_cl);
+  setCR('Mat','A', Math.abs(rA.co2Mat).toFixed(2)+' kg', mA_cl);
+  setCR('Mat','B', Math.abs(rB.co2Mat).toFixed(2)+' kg', mB_cl);
+  setCR('Trans','A', rA.co2Trans.toFixed(2)+' kg', tA_cl);
+  setCR('Trans','B', rB.co2Trans.toFixed(2)+' kg', tB_cl);
+  setCR('Total','A', Math.abs(rA.co2Total).toFixed(2)+' kg', totA_cl);
+  setCR('Total','B', Math.abs(rB.co2Total).toFixed(2)+' kg', totB_cl);
+  setCR('Mech','A', rA.ief?Math.round(rA.ief.sm)+'/50':'N/A', mechA_cl);
+  setCR('Mech','B', rB.ief?Math.round(rB.ief.sm)+'/50':'N/A', mechB_cl);
+  setCR('Co2s','A', rA.ief?Math.round(rA.ief.sc)+'/40':'N/A', co2sA_cl);
+  setCR('Co2s','B', rB.ief?Math.round(rB.ief.sc)+'/40':'N/A', co2sB_cl);
+  setCR('Trs','A', rA.ief?Math.round(rA.ief.st)+'/10':'N/A', trsA_cl);
+  setCR('Trs','B', rB.ief?Math.round(rB.ief.st)+'/10':'N/A', trsB_cl);
+
+  // ── LOGS ──
+  function buildLog(letter, mat, mass, sigma, transport, dist, result) {
+    const tLabel = transport ? TRANSPORT_DB[transport].label : 'Non renseigné';
+    const ref = document.getElementById('ref'+letter).value || 'N/A';
+    const score = result.ief ? result.ief.score+'/100' : 'N/A';
+    return [
+      `<span class="log-key">MAT.${letter}</span> <span class="log-sep">│</span> <span class="log-val">${mat.name}</span>`,
+      `<span class="log-key">REF</span>  <span class="log-sep">│</span> <span class="log-val">${ref}</span>`,
+      `<span class="log-key">MASSE</span><span class="log-sep">│</span> <span class="log-val">${mass.toFixed(3)} kg</span>`,
+      `<span class="log-key">σ</span>    <span class="log-sep">│</span> <span class="log-val">${sigma?sigma.toFixed(2)+' MPa':'N/A'}</span>`,
+      `<span class="log-key">CO₂mat</span><span class="log-sep">│</span> <span class="log-val">${result.co2Mat.toFixed(3)} kg</span>`,
+      `<span class="log-key">TRANS</span><span class="log-sep">│</span> <span class="log-val">${tLabel}·${dist}km</span>`,
+      `<span class="log-key">CO₂tra</span><span class="log-sep">│</span> <span class="log-val">${result.co2Trans.toFixed(3)} kg</span>`,
+      `<span class="log-key">TOTAL</span><span class="log-sep">│</span> <span class="log-val">${Math.abs(result.co2Total).toFixed(3)} kg</span>`,
+      `<span class="log-key">IEF</span>  <span class="log-sep">│</span> <span class="log-val">${score}</span>`,
+    ].join('<br>');
+  }
+
+  document.getElementById('detailLogA').innerHTML = buildLog('A', selectedMatA, massA, sigmaA, selectedTransportA, distA, rA);
+  document.getElementById('detailLogB').innerHTML = buildLog('B', selectedMatB, massB, sigmaB, selectedTransportB, distB, rB);
+}
+
+// ── RESET ──
+function resetAll() {
+  ['massA','massB','refA','refB','sigmaA','sigmaB','distanceA','distanceB'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.value='';
+  });
+  document.getElementById('matSearch').value='';
+  document.getElementById('matCat').value='';
+  document.getElementById('scaleDisplayA').innerHTML='0.000 <span>kg</span>';
+  document.getElementById('scaleDisplayB').innerHTML='0.000 <span>kg</span>';
+  document.getElementById('sigmaLive').textContent='—';
+  document.getElementById('sigmaLive').style.color='rgba(255,255,255,0.3)';
+  document.querySelectorAll('.transport-card').forEach(c=>c.classList.remove('selected'));
+  document.querySelectorAll('.sigma-preset').forEach(b=>b.classList.remove('selected'));
+  ['selMatDisplayA','selMatDisplayB'].forEach(id=>{ document.getElementById(id).style.display='none'; });
+  selectedMatA=null; selectedMatB=null;
+  selectedTransportA=null; selectedTransportB=null;
+  // Reset tabs state
+  ['massTab','flexTab','matTab','transTab'].forEach(base=>{
+    ['A','B'].forEach(l=>{
+      const t=document.getElementById(base+l);
+      if(t){ t.className='mat-tab'; }
+    });
+    document.getElementById(base+'A').classList.add('active-A');
+  });
+  // Reset panels
+  ['massPanel','flexPanel','matPanel','transPanel'].forEach(base=>{
+    ['A','B'].forEach(l=>{
+      const p=document.getElementById(base+l);
+      if(p){ p.classList.toggle('visible',l==='A'); }
+    });
+  });
+  activeMassTab='A'; activeFlexTab='A'; activeMatTab='A'; activeTransTab='A';
+  document.querySelectorAll('.step-tab').forEach(t=>t.classList.remove('done','active'));
+  document.getElementById('tab1').classList.add('active');
+  setStep(1);
+  renderMaterials();
+}
+
+// Init
+renderMaterials();
+</script>
+</body>
+</html>
